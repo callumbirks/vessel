@@ -1,17 +1,13 @@
 package com.doofcraft.vessel.mixin;
 
-import com.doofcraft.vessel.api.VesselBlock;
 import com.doofcraft.vessel.api.VesselItem;
 import com.doofcraft.vessel.api.VesselRegistry;
-import com.doofcraft.vessel.base.VesselBaseBlockEntity;
 import com.doofcraft.vessel.component.VesselTag;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.StackReference;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;

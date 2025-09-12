@@ -6,7 +6,7 @@ import net.minecraft.component.ComponentType
 import net.minecraft.item.ItemConvertible
 import net.minecraft.item.ItemStack
 
-abstract class Vessel(val tag: VesselTag) {
+abstract class Vessel(val tag: VesselTag): ItemStackFactory {
     protected abstract val baseItem: ItemConvertible
     private val components = mutableListOf<ComponentEntry<*>>(
         ComponentEntry(VesselTag.COMPONENT, tag)
@@ -16,7 +16,7 @@ abstract class Vessel(val tag: VesselTag) {
         components.add(ComponentEntry(type, value))
     }
 
-    open fun create(count: Int): ItemStack {
+    override fun create(count: Int): ItemStack {
         val stack = ItemStack(baseItem)
         components.forEach { it.apply(stack) }
         return stack

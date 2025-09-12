@@ -5,18 +5,12 @@ import com.doofcraft.vessel.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.component.VesselTag
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
-import net.fabricmc.fabric.api.event.player.UseEntityCallback
-import net.fabricmc.fabric.api.event.player.UseItemCallback
-import net.minecraft.entity.Entity
 import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Hand
-import net.minecraft.util.TypedActionResult
 import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.hit.EntityHitResult
 import net.minecraft.world.World
 
 object VesselServerMod: DedicatedServerModInitializer {
@@ -32,6 +26,6 @@ object VesselServerMod: DedicatedServerModInitializer {
             ?: return ActionResult.PASS
         val block = VesselRegistry.getBlock(tag.key)
             ?: return ActionResult.PASS
-        return block.use(world as ServerWorld, player as ServerPlayerEntity, hand)
+        return block.use(world as ServerWorld, blockEntity, player as ServerPlayerEntity, hand)
     }
 }

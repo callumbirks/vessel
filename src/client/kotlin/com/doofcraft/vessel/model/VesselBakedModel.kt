@@ -1,6 +1,5 @@
 package com.doofcraft.vessel.model
 
-import com.doofcraft.vessel.component.VesselTag
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.block.BlockState
@@ -18,7 +17,7 @@ import net.minecraft.util.math.random.Random
 @Environment(EnvType.CLIENT)
 class VesselBakedModel(
     private val fallback: BakedModel,
-    private val overrides: Map<String, BakedModel>,
+    private val overrides: List<VesselBakedOverride>,
 ) : BakedModel {
     override fun getQuads(
         state: BlockState?, face: Direction?, random: Random
@@ -40,8 +39,8 @@ class VesselBakedModel(
         override fun apply(
             model: BakedModel, stack: ItemStack, world: ClientWorld?, entity: LivingEntity?, seed: Int
         ): BakedModel {
-            val tag = stack.get(VesselTag.COMPONENT) ?: return fallback
-            return overrides[tag.key] ?: fallback
+            val override = overrides.firstOrNull { it.predicate.test(stack) }
+            return override?.model ?: fallback
         }
     }
 }

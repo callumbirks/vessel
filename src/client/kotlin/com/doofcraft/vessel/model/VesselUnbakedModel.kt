@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.model
 
+import com.doofcraft.vessel.VesselMod
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -23,12 +24,12 @@ import java.util.function.Function
 @Environment(EnvType.CLIENT)
 class VesselUnbakedModel(
     private val parent: Identifier,
-    private val overrides: Map<String, Identifier>,
+    private val overrides: List<VesselUnbakedOverride>,
 ) : UnbakedModel {
 
     override fun getModelDependencies(): Collection<Identifier> = buildList {
         add(parent)
-        overrides.forEach { add(it.value) }
+        overrides.forEach { add(it.model) }
     }
 
     override fun setParents(modelLoader: Function<Identifier, UnbakedModel>) {
@@ -37,17 +38,18 @@ class VesselUnbakedModel(
     }
 
     override fun bake(
-        baker: Baker,
-        textureGetter: Function<SpriteIdentifier, Sprite>,
-        rotationContainer: ModelBakeSettings
+        baker: Baker, textureGetter: Function<SpriteIdentifier, Sprite>, rotationContainer: ModelBakeSettings
     ): BakedModel {
         val parent = baker.bake(parent, rotationContainer)!!
-        val bakedMap = overrides.mapValues { baker.bake(it.value, rotationContainer)!! }
+        val bakedMap = overrides.map { VesselBakedOverride(it.predicate, baker.bake(it.model, rotationContainer)!!) }
         return VesselBakedModel(parent, bakedMap)
     }
 
     companion object {
-        val GSON: Gson = GsonBuilder().registerTypeAdapter(VesselUnbakedModel::class.java, Deserializer()).create()
+        val GSON: Gson =
+            GsonBuilder().registerTypeAdapter(VesselUnbakedModel::class.java, Deserializer()).registerTypeAdapter(
+                VesselPredicate::class.java, VesselPredicate.Deserializer()
+            ).create()
 
         fun deserialize(input: Reader): VesselUnbakedModel {
             return JsonHelper.deserialize(GSON, input, VesselUnbakedModel::class.java)
@@ -59,14 +61,22 @@ class VesselUnbakedModel(
             json: JsonElement, typeOfT: Type, context: JsonDeserializationContext
         ): VesselUnbakedModel {
             val root = json.asJsonObject
-            val overrides = overridesFromJson(root)
+            val overrides = overridesFromJson(root, context)
             val parent = parentFromJson(root)
             return VesselUnbakedModel(parent, overrides)
         }
 
-        private fun overridesFromJson(obj: JsonObject): Map<String, Identifier> {
-            return obj.getAsJsonObject("vessel_models")?.asMap()?.mapValues { Identifier.of(it.value.asString) }
-                ?: emptyMap()
+        private fun overridesFromJson(
+            obj: JsonObject, context: JsonDeserializationContext
+        ): List<VesselUnbakedOverride> {
+            return obj.getAsJsonArray("vessel_overrides")?.map {
+                val override = it.asJsonObject
+                val predicate: VesselPredicate = context.deserialize(override.get("when"), VesselPredicate::class.java)
+                val modelStr = override.get("model").asString
+                val model =
+                    if (modelStr.contains(':')) Identifier.of(modelStr) else Identifier.of(VesselMod.MODID, modelStr)
+                VesselUnbakedOverride(predicate, model)
+            } ?: emptyList()
         }
 
         private fun parentFromJson(obj: JsonObject): Identifier {

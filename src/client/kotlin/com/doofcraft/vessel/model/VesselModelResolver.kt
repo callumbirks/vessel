@@ -24,5 +24,5 @@ object VesselModelResolver: ModelResolver {
         }
     }
 
-    val ID = VesselMod.vesselResource("tag_model")
+    val ID = VesselMod.vesselResource("model")
 }

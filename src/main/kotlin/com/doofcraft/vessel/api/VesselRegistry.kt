@@ -1,6 +1,8 @@
 package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.VesselMod
+import com.doofcraft.vessel.component.VesselTag
+import net.minecraft.item.ItemStack
 import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
 import kotlin.jvm.optionals.getOrNull
@@ -38,6 +40,22 @@ object VesselRegistry {
         }
         val item = Registries.ITEM.get(key)
         return VanillaItemFactory(item)
+    }
+
+    fun find(key: VesselIdentifier): ItemStackFactory? {
+        return when (key.namespace) {
+            null, VesselMod.MODID -> items[key.path] ?: blocks[key.path]
+            else -> VanillaItemFactory(Registries.ITEM.get(key.toIdentifier()))
+        }
+    }
+
+    fun match(stack: ItemStack): VesselIdentifier {
+        val tag = stack.get(VesselTag.COMPONENT)
+        if (tag == null) {
+            val id = stack.registryEntry.key.getOrNull()?.value ?: Identifier.ofVanilla("air")
+            return VesselIdentifier.of(id.namespace, id.path)
+        }
+        return VesselIdentifier.vessel(tag.key)
     }
 
     fun <T : VesselBlock> addBlock(block: T): T {

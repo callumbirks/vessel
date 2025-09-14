@@ -1,22 +1,23 @@
 package com.doofcraft.vessel.model
 
 import com.google.gson.JsonArray
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import com.google.gson.JsonParseException
 import com.google.gson.JsonPrimitive
 import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonReader.Token
 import net.minecraft.component.ComponentType
 import net.minecraft.item.ItemStack
 import net.minecraft.registry.Registries
 import net.minecraft.util.Identifier
-import java.lang.reflect.Type
 
 sealed interface VesselPredicate {
     fun test(stack: ItemStack): Boolean
+    fun componentList(): List<Identifier>
 
     data class ComponentOp(
         val componentId: Identifier, val path: String?, val op: JsonOp
@@ -27,97 +28,134 @@ sealed interface VesselPredicate {
 
         override fun test(stack: ItemStack): Boolean {
             if (component == null) return false
-            val any = stack.get(component) ?: return op is JsonOp.Exists && !op.value
-            val json = toJson(component!!.codec!!, any) ?: return false
+            val componentValue = stack.get(component) ?: return op is JsonOp.Exists && !op.value
+            val json = toJson(component!!.codec!!, componentValue) ?: return false
             val elem = jsonPointer(json, path)
+            if (elem !is JsonPrimitive?) return false
             return op.test(elem)
+        }
+
+        override fun componentList(): List<Identifier> {
+            return listOf(this.componentId)
         }
     }
 
     data class All(val children: List<VesselPredicate>) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = children.all { it.test(stack) }
+        override fun componentList(): List<Identifier> {
+            return this.children.flatMap { it.componentList() }
+        }
     }
 
     data class Any(val children: List<VesselPredicate>) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = children.any { it.test(stack) }
+        override fun componentList(): List<Identifier> {
+            return this.children.flatMap { it.componentList() }
+        }
     }
 
     data class Not(val child: VesselPredicate) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = !child.test(stack)
+        override fun componentList(): List<Identifier> {
+            return this.child.componentList()
+        }
     }
 
     sealed interface JsonOp {
-        fun test(actual: JsonElement?): Boolean
+        fun test(actual: JsonPrimitive?): Boolean
 
         data class Exists(val value: Boolean) : JsonOp {
-            override fun test(actual: JsonElement?) = (actual != null) == value
+            override fun test(actual: JsonPrimitive?) = (actual != null) == value
         }
 
-        data class Eq(val expect: JsonElement) : JsonOp {
-            override fun test(actual: JsonElement?) = jsonEquals(actual, expect)
+        data class Eq(val expect: JsonPrimitive?) : JsonOp {
+            override fun test(actual: JsonPrimitive?) = jsonEquals(actual, expect)
         }
 
-        data class Ne(val expect: JsonElement) : JsonOp {
-            override fun test(actual: JsonElement?) = !jsonEquals(actual, expect)
+        data class Ne(val expect: JsonPrimitive?) : JsonOp {
+            override fun test(actual: JsonPrimitive?) = !jsonEquals(actual, expect)
         }
 
-        data class In(val set: List<JsonElement>) : JsonOp {
-            override fun test(actual: JsonElement?): Boolean = set.any { jsonEquals(actual, it) }
-        }
-
-        data class Contains(val needle: JsonElement) : JsonOp {
-            override fun test(actual: JsonElement?): Boolean = when {
-                actual == null -> false
-                actual.isJsonArray -> actual.asJsonArray.any { jsonEquals(it, needle) }
-                actual.isJsonPrimitive && actual.asJsonPrimitive.isString && needle.isJsonPrimitive && needle.asJsonPrimitive.isString -> actual.asString.contains(
-                    needle.asString
-                )
-
-                else -> false
-            }
-        }
-
-        data class Range(val min: Double?, val max: Double?, val inclusive: Boolean = true) : JsonOp {
-            override fun test(actual: JsonElement?): Boolean {
-                val x = actual?.asJsonPrimitive?.asDoubleOrNull() ?: return false
-                val lo = min?.let { if (inclusive) x >= it else x > it } ?: true
-                val hi = max?.let { if (inclusive) x <= it else x < it } ?: true
-                return lo && hi
-            }
+        data class In(val set: List<JsonPrimitive?>) : JsonOp {
+            override fun test(actual: JsonPrimitive?): Boolean = set.any { jsonEquals(actual, it) }
         }
     }
 
-    class Deserializer : JsonDeserializer<VesselPredicate> {
-        override fun deserialize(
-            json: JsonElement, typeOfT: Type, context: JsonDeserializationContext
-        ): VesselPredicate {
-            val obj = json.asJsonObject
-            when {
-                obj.has("all") -> return All(obj.getAsJsonArray("all").map { deserialize(it, typeOfT, context) })
-                obj.has("any") -> return Any(obj.getAsJsonArray("any").map { deserialize(it, typeOfT, context) })
-                obj.has("not") -> return Not(deserialize(obj.get("not"), typeOfT, context))
-            }
+    class Deserializer {
+        @FromJson
+        fun fromJson(reader: JsonReader): VesselPredicate {
+            reader.beginObject()
+            var component: Identifier? = null
+            var path: String? = null
+            var op: JsonOp? = null
+            while (reader.hasNext()) {
+                when (reader.nextName()) {
+                    "all" -> {
+                        val list = parseList(reader)
+                        reader.endObject()
+                        return All(list)
+                    }
 
-            val component = Identifier.of(obj.getAsJsonPrimitive("component").asString)
-            val path = obj.getAsJsonPrimitive("path")?.asString
+                    "any" -> {
+                        val list = parseList(reader)
+                        reader.endObject()
+                        return Any(list)
+                    }
 
-            val op: JsonOp = when {
-                obj.has("exists") -> JsonOp.Exists(obj.getAsJsonPrimitive("exists").asBoolean)
-                obj.has("eq") -> JsonOp.Eq(obj.get("eq"))
-                obj.has("ne") -> JsonOp.Ne(obj.get("ne"))
-                obj.has("in") -> JsonOp.In(obj.getAsJsonArray("in").toList())
-                obj.has("contains") -> JsonOp.Contains(obj.get("contains"))
-                obj.has("range") -> obj.getAsJsonObject("range").let { r ->
-                    JsonOp.Range(r["min"]?.asDouble, r["max"]?.asDouble, r["inclusive"]?.asBoolean ?: true)
+                    "not" -> {
+                        val pred = fromJson(reader)
+                        reader.endObject()
+                        return Not(pred)
+                    }
+
+                    "component" -> component = Identifier.of(reader.nextString())
+                    "path" -> path = reader.nextString()
+                    "exists" -> op = JsonOp.Exists(reader.nextBoolean())
+                    "eq" -> op = JsonOp.Eq(readPrimitive(reader))
+                    "ne" -> JsonOp.Ne(readPrimitive(reader))
+                    "in" -> {
+                        val list = mutableListOf<JsonPrimitive?>()
+                        reader.beginArray()
+                        while (reader.hasNext()) list.add(readPrimitive(reader))
+                        reader.endArray()
+                        op = JsonOp.In(list)
+                    }
+
+                    else -> reader.skipValue()
                 }
-                else -> throw JsonParseException("No operator for component $component in $obj")
             }
+            reader.endObject()
+            if (component == null) throw JsonDataException("'component' missing from predicate at ${reader.path}")
+            if (op == null) throw JsonDataException("No op specified in predicate at ${reader.path}")
             return ComponentOp(component, path, op)
+        }
+
+        private fun parseList(reader: JsonReader): List<VesselPredicate> {
+            val list = mutableListOf<VesselPredicate>()
+            reader.beginArray()
+            while (reader.hasNext()) {
+                list.add(fromJson(reader))
+            }
+            reader.endArray()
+            return list
+        }
+
+        private fun readPrimitive(reader: JsonReader): JsonPrimitive? {
+            return when (reader.peek()) {
+                Token.BOOLEAN -> JsonPrimitive(reader.nextBoolean())
+                Token.NUMBER -> JsonPrimitive(reader.nextDouble())
+                Token.STRING -> JsonPrimitive(reader.nextString())
+                Token.NULL -> {
+                    reader.skipValue()
+                    return null
+                }
+                else -> throw JsonDataException("Expected primitive value at ${reader.path}")
+            }
         }
     }
 }
 
-private fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
+fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
     if (a === b) return true
     if (a == null || b == null) return false
     if (a.isJsonPrimitive && b.isJsonPrimitive) {
@@ -128,16 +166,12 @@ private fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
     return a == b
 }
 
-private fun JsonPrimitive.asDoubleOrNull(): Double? = if (isNumber) asNumber.toDouble() else asString.toDoubleOrNull()
-
-private fun JsonArray.toList(): List<JsonElement> = map { it.deepCopy() }
-
 @Suppress("UNCHECKED_CAST")
-private fun resolveComponent(id: Identifier): ComponentType<Any>? {
+fun resolveComponent(id: Identifier): ComponentType<Any>? {
     return Registries.DATA_COMPONENT_TYPE.get(id) as? ComponentType<Any>
 }
 
-private fun <T> toJson(codec: Codec<T>, value: T): JsonElement? {
+fun <T> toJson(codec: Codec<T>, value: T): JsonElement? {
     val result = codec.encodeStart(JsonOps.INSTANCE, value)
     return result.result().orElse(null)
 }

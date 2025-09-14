@@ -7,13 +7,24 @@ import net.minecraft.util.InvalidIdentifierException
 data class VesselIdentifier(
     val namespace: String? = null,
     val path: String,
-) {
+): Comparable<VesselIdentifier> {
     override fun toString(): String {
         return "${namespace ?: VesselMod.MODID}:$path"
     }
 
     fun toIdentifier(): Identifier {
         return Identifier.of(namespace ?: VesselMod.MODID, path)
+    }
+
+    fun effectiveNamespace(): String = namespace ?: VesselMod.MODID
+
+    override fun compareTo(other: VesselIdentifier): Int {
+        var result = this.path.compareTo(other.path)
+        if (result == 0) {
+           result = this.effectiveNamespace().compareTo(other.effectiveNamespace())
+        }
+
+        return result
     }
 
     companion object {

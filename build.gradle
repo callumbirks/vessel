@@ -2,6 +2,7 @@ plugins {
 	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 	id "org.jetbrains.kotlin.jvm" version "2.2.0"
+    id "com.google.devtools.ksp" version "2.2.0-2.0.2"
 }
 
 version = project.mod_version
@@ -41,6 +42,13 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+
+    // Moshi
+    implementation "com.squareup.moshi:moshi:${project.moshi_version}"
+    implementation "dev.zacsweers.moshix:moshi-sealed-runtime:${project.moshi_sealed_version}"
+
+    ksp "com.squareup.moshi:moshi-kotlin-codegen:${project.moshi_version}"
+    ksp "dev.zacsweers.moshix:moshi-sealed-codegen:${project.moshi_sealed_version}"
 }
 
 processResources {

@@ -17,7 +17,7 @@ abstract class Vessel(val tag: VesselTag): ItemStackFactory {
     }
 
     override fun create(count: Int): ItemStack {
-        val stack = ItemStack(baseItem)
+        val stack = ItemStack(baseItem, count)
         components.forEach { it.apply(stack) }
         return stack
     }

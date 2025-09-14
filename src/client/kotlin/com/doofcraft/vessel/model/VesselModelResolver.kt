@@ -1,28 +1,36 @@
 package com.doofcraft.vessel.model
 
 import com.doofcraft.vessel.VesselMod
-import com.google.gson.JsonParser
+import com.squareup.moshi.JsonReader
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelResolver
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.render.model.UnbakedModel
+import net.minecraft.util.Identifier
+import okio.buffer
+import okio.source
 
 @Environment(EnvType.CLIENT)
 object VesselModelResolver: ModelResolver {
     override fun resolveModel(context: ModelResolver.Context): UnbakedModel? {
         if (context.id().namespace != VesselMod.MODID) return null
+        VesselMod.LOGGER.info("Resolving model {}", context.id())
+        when (context.id().path) {
+            "item/item", "block/block", "item/block_item" -> {}
+            else -> return null
+        }
         val rm = MinecraftClient.getInstance().resourceManager
-        val res = rm.getResource(context.id()).orElse(null) ?: return null
+        val resId = Identifier.of(context.id().namespace, "models/${context.id().path}.json")
+        val res = rm.getResource(resId).orElse(null) ?: run {
+            VesselMod.LOGGER.warn("Failed to get Resource with id $resId")
+            return null
+        }
 
-        res.reader.use { reader ->
-            val json = JsonParser.parseReader(reader).asJsonObject
-            val loader = json.getAsJsonPrimitive("loader")?.asString ?: return null
-            if (loader != ID.toString()) return null
-
-            return VesselUnbakedModel.deserialize(reader)
+        res.inputStream.use { stream ->
+            val source = stream.source().buffer()
+            val json = JsonReader.of(source)
+            return VesselUnbakedModel.Deserializer().fromJson(json)
         }
     }
-
-    val ID = VesselMod.vesselResource("model")
 }

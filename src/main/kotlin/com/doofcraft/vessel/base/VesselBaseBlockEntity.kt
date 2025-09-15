@@ -2,6 +2,7 @@ package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.registry.ModBlockEntities
+import net.minecraft.block.Block
 import net.minecraft.block.BlockState
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.item.ItemStack
@@ -27,6 +28,14 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         markDirtyAndSync()
     }
 
+    fun updateItem(fn: (ItemStack) -> Unit): ItemStack {
+        fn.invoke(item)
+        val newItem = item.copyWithCount(1)
+        item = newItem
+        markDirtyAndSync()
+        return item
+    }
+
     override fun writeNbt(nbt: NbtCompound, registryLookup: RegistryWrapper.WrapperLookup) {
         super.writeNbt(nbt, registryLookup)
         if (!item.isEmpty) nbt.put("item", item.encode(registryLookup))
@@ -50,6 +59,6 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
 
     private fun markDirtyAndSync() {
         markDirty()
-        world?.updateListeners(pos, cachedState, cachedState, 3)
+        world?.updateListeners(pos, cachedState, cachedState, Block.NOTIFY_LISTENERS)
     }
 }

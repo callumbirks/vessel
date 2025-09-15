@@ -19,7 +19,7 @@ object VesselServerMod: DedicatedServerModInitializer {
     }
 
     fun useBlock(player: PlayerEntity, world: World, hand: Hand, blockHitResult: BlockHitResult): ActionResult {
-        if (player.isSpectator) return ActionResult.PASS
+        if (player.isSpectator || hand != Hand.MAIN_HAND) return ActionResult.PASS
         val blockEntity = world.getBlockEntity(blockHitResult.blockPos)
         if (blockEntity == null || blockEntity !is VesselBaseBlockEntity) return ActionResult.PASS
         val tag = blockEntity.item.get(VesselTag.COMPONENT)

@@ -1,6 +1,8 @@
 package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
+import com.doofcraft.vessel.api.VesselRegistry
+import com.doofcraft.vessel.component.VesselTag
 import com.mojang.serialization.MapCodec
 import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
@@ -8,6 +10,7 @@ import net.minecraft.block.BlockWithEntity
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.item.ItemStack
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.MathHelper
 import net.minecraft.world.World
@@ -40,6 +43,11 @@ class VesselBaseBlock(settings: Settings): BlockWithEntity(settings) {
 
         if (entity is VesselBaseBlockEntity) {
             entity.initialize(itemStack, yaw)
+            entity.item.get(VesselTag.COMPONENT)?.let {
+                val block = VesselRegistry.getBlock(it.key)
+                    ?: return@let
+                block.onPlaced(world as ServerWorld, pos, placer, entity.item)
+            }
         }
     }
 

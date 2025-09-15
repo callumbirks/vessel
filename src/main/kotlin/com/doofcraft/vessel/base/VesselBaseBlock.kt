@@ -2,12 +2,14 @@ package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
 import com.mojang.serialization.MapCodec
+import net.minecraft.block.BlockRenderType
 import net.minecraft.block.BlockState
 import net.minecraft.block.BlockWithEntity
 import net.minecraft.block.entity.BlockEntity
 import net.minecraft.entity.LivingEntity
 import net.minecraft.item.ItemStack
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.MathHelper
 import net.minecraft.world.World
 
 class VesselBaseBlock(settings: Settings): BlockWithEntity(settings) {
@@ -24,13 +26,24 @@ class VesselBaseBlock(settings: Settings): BlockWithEntity(settings) {
         placer: LivingEntity?,
         itemStack: ItemStack
     ) {
+        if (world.isClient) return
+
+        var yaw = 0f
+        if (placer != null) {
+            yaw = kotlin.math.round(MathHelper.wrapDegrees(placer.yaw + 180f) / 45f) * 45f
+        }
+
         val entity = world.getBlockEntity(pos) ?: run {
             VesselMod.LOGGER.trace("VesselBaseBlock placed but no BlockEntity found at pos")
             return
         }
 
         if (entity is VesselBaseBlockEntity) {
-            entity.initialize(itemStack)
+            entity.initialize(itemStack, yaw)
         }
+    }
+
+    override fun getRenderType(state: BlockState?): BlockRenderType {
+        return BlockRenderType.INVISIBLE
     }
 }

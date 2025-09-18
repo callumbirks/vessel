@@ -20,6 +20,15 @@ repositories {
 	// for more information about repositories.
 }
 
+configurations {
+    transitiveInclude {
+        exclude(group: "com.mojang")
+        exclude(group: "org.jetbrains.kotlin")
+        exclude(group: "org.jetbrains.kotlinx")
+        exclude(group: "net.fabricmc")
+    }
+}
+
 loom {
 	splitEnvironmentSourceSets()
 
@@ -44,11 +53,15 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
 
     // Moshi
-    implementation "com.squareup.moshi:moshi:${project.moshi_version}"
-    implementation "dev.zacsweers.moshix:moshi-sealed-runtime:${project.moshi_sealed_version}"
+    transitiveInclude(implementation "com.squareup.moshi:moshi:${project.moshi_version}")
+    transitiveInclude(implementation "dev.zacsweers.moshix:moshi-sealed-runtime:${project.moshi_sealed_version}")
 
     ksp "com.squareup.moshi:moshi-kotlin-codegen:${project.moshi_version}"
     ksp "dev.zacsweers.moshix:moshi-sealed-codegen:${project.moshi_sealed_version}"
+
+    configurations.transitiveInclude.resolvedConfiguration.resolvedArtifacts.forEach {
+        include(it.moduleVersion.id.toString())
+    }
 }
 
 processResources {

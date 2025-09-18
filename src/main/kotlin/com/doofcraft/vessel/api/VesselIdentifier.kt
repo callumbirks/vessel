@@ -18,6 +18,17 @@ data class VesselIdentifier(
 
     fun effectiveNamespace(): String = namespace ?: VesselMod.MODID
 
+    override fun equals(other: Any?): Boolean {
+        if (other is VesselIdentifier) {
+            return this.compareTo(other) == 0
+        }
+        return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return effectiveNamespace().hashCode()
+    }
+
     override fun compareTo(other: VesselIdentifier): Int {
         var result = this.path.compareTo(other.path)
         if (result == 0) {

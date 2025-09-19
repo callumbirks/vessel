@@ -55,8 +55,6 @@ class VesselBakedModel(
             val now = System.currentTimeMillis()
             if (now - lastTime >= 1000L) {
                 lastTime = now
-                VesselMod.LOGGER.info("getOverrides stack of {}, components = [{}]", stack.item.getName(stack), componentIds.joinToString(", "))
-                VesselMod.LOGGER.info("getOverrides: {} ({} hit, {} miss, {}ms avg)", counter, hitCounter, missCounter, timer.toDouble() / counter)
                 counter = 1
                 hitCounter = 0
                 missCounter = 0

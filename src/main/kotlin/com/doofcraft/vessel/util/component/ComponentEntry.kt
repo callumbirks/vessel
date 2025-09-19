@@ -5,9 +5,9 @@ import net.minecraft.item.ItemStack
 
 data class ComponentEntry<T>(
     val type: ComponentType<T>,
-    val value: T
+    val supplier: () -> T
 ) {
     fun apply(stack: ItemStack) {
-        stack.set(type, value)
+        stack.set(type, supplier())
     }
 }

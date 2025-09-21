@@ -1,13 +1,13 @@
 package com.doofcraft.vessel.util.registry
 
 import com.doofcraft.vessel.VesselMod.vesselResource
-import net.minecraft.registry.Registry
-import net.minecraft.util.Identifier
+import net.minecraft.core.Registry
+import net.minecraft.resources.ResourceLocation
 
-abstract class SimpleRegistry<R: Registry<T>, T> {
+abstract class SimpleRegistry<R: Registry<T>, T: Any> {
     abstract val registry: R
 
-    private val queue = hashMapOf<Identifier, T>()
+    private val queue = hashMapOf<ResourceLocation, T>()
 
     open fun <E : T> create(name: String, item: E): E {
         queue[vesselResource(name)] = item

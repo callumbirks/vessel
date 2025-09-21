@@ -2,16 +2,15 @@ package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.registry.ModBlockEntities
-import net.minecraft.block.Block
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.listener.ClientPlayPacketListener
-import net.minecraft.network.packet.Packet
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket
-import net.minecraft.registry.RegistryWrapper
-import net.minecraft.util.math.BlockPos
+import net.minecraft.core.BlockPos
+import net.minecraft.core.HolderLookup
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
 
 class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBlockEntities.VESSEL, pos, state) {
     var item: ItemStack = ItemStack.EMPTY
@@ -25,40 +24,34 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         }
         this.item = item.copyWithCount(1)
         this.yaw = yaw
-        markDirtyAndSync()
+        setChanged()
     }
 
     fun updateItem(fn: (ItemStack) -> Unit): ItemStack {
         fn.invoke(item)
         val newItem = item.copyWithCount(1)
         item = newItem
-        markDirtyAndSync()
+        setChanged()
         return item
     }
 
-    override fun writeNbt(nbt: NbtCompound, registryLookup: RegistryWrapper.WrapperLookup) {
-        super.writeNbt(nbt, registryLookup)
-        if (!item.isEmpty) nbt.put("item", item.encode(registryLookup))
-        nbt.putFloat("yaw", yaw)
+    override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        item = tag.getCompound("item").let { ItemStack.parse(registries, it).orElse(ItemStack.EMPTY) }
+        yaw = tag.getFloat("yaw")
     }
 
-    override fun readNbt(nbt: NbtCompound, registryLookup: RegistryWrapper.WrapperLookup) {
-        super.readNbt(nbt, registryLookup)
-        item = nbt.getCompound("item").let { ItemStack.fromNbt(registryLookup, it).orElse(ItemStack.EMPTY) }
-        yaw = nbt.getFloat("yaw")
+    override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        if (!item.isEmpty) tag.put("item", item.save(registries))
+        tag.putFloat("yaw", yaw)
     }
 
-    override fun toInitialChunkDataNbt(registryLookup: RegistryWrapper.WrapperLookup): NbtCompound {
-        return NbtCompound().also { writeNbt(it, registryLookup) }
+    override fun getUpdateTag(registries: HolderLookup.Provider): CompoundTag? {
+        val tag = super.getUpdateTag(registries)
+        saveAdditional(tag, registries)
+        return tag
     }
 
-    override fun toUpdatePacket(): Packet<ClientPlayPacketListener> {
-        super.toUpdatePacket()
-        return BlockEntityUpdateS2CPacket.create(this)
-    }
-
-    private fun markDirtyAndSync() {
-        markDirty()
-        world?.updateListeners(pos, cachedState, cachedState, Block.NOTIFY_LISTENERS)
+    override fun getUpdatePacket(): Packet<ClientGamePacketListener?>? {
+        return ClientboundBlockEntityDataPacket.create(this)
     }
 }

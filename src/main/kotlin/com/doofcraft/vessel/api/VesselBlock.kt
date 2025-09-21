@@ -3,23 +3,24 @@ package com.doofcraft.vessel.api
 import com.doofcraft.vessel.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.component.VesselTag
 import com.doofcraft.vessel.registry.ModItems
-import net.minecraft.entity.LivingEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.ActionResult
-import net.minecraft.util.Hand
-import net.minecraft.util.math.BlockPos
+import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.ItemLike
 
 abstract class VesselBlock(tag: VesselTag) : Vessel(tag) {
-    override val baseItem = ModItems.VESSEL_BLOCK
+    override val baseItem: ItemLike = ModItems.VESSEL_BLOCK
 
     open fun use(
-        world: ServerWorld, entity: VesselBaseBlockEntity, player: ServerPlayerEntity, hand: Hand
-    ): ActionResult {
-        return ActionResult.PASS
+        level: ServerLevel, entity: VesselBaseBlockEntity, player: ServerPlayer, hand: InteractionHand
+    ): InteractionResult {
+        return InteractionResult.PASS
     }
 
-    open fun onPlaced(world: ServerWorld, pos: BlockPos, placer: LivingEntity?, stack: ItemStack) {
+    open fun onPlaced(level: ServerLevel, pos: BlockPos, placer: LivingEntity?, stack: ItemStack) {
     }
 }

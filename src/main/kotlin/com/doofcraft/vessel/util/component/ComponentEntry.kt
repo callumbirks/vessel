@@ -1,10 +1,10 @@
 package com.doofcraft.vessel.util.component
 
-import net.minecraft.component.ComponentType
-import net.minecraft.item.ItemStack
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.world.item.ItemStack
 
 data class ComponentEntry<T>(
-    val type: ComponentType<T>,
+    val type: DataComponentType<T>,
     val supplier: () -> T
 ) {
     fun apply(stack: ItemStack) {

@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.model
 
-import net.minecraft.client.render.model.BakedModel
+import net.minecraft.client.resources.model.BakedModel
 
 data class VesselBakedOverride(
     val predicate: VesselPredicate,

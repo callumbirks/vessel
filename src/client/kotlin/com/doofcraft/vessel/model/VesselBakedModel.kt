@@ -1,21 +1,21 @@
 package com.doofcraft.vessel.model
 
-import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.util.collections.LruCache
 import com.doofcraft.vessel.util.hash.Fnv64
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
-import net.minecraft.block.BlockState
-import net.minecraft.client.render.model.BakedModel
-import net.minecraft.client.render.model.BakedQuad
-import net.minecraft.client.render.model.json.ModelOverrideList
-import net.minecraft.client.render.model.json.ModelTransformation
-import net.minecraft.client.texture.Sprite
-import net.minecraft.client.world.ClientWorld
-import net.minecraft.entity.LivingEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.random.Random
+import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.client.renderer.block.model.BakedQuad
+import net.minecraft.client.renderer.block.model.ItemOverrides
+import net.minecraft.client.renderer.block.model.ItemTransforms
+import net.minecraft.client.renderer.texture.TextureAtlasSprite
+import net.minecraft.client.resources.model.BakedModel
+import net.minecraft.core.Direction
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.util.RandomSource
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.block.state.BlockState
 
 @Environment(EnvType.CLIENT)
 class VesselBakedModel(
@@ -23,7 +23,7 @@ class VesselBakedModel(
     private val overrides: List<VesselBakedOverride>,
 ) : BakedModel {
     private val componentIds = overrides.flatMap { it.predicate.componentList() }.toSet()
-    private val components = componentIds.mapNotNull { resolveComponent(it) }
+    private val components: List<DataComponentType<Any>> = componentIds.mapNotNull { resolveComponent(it) }
     private val cache = LruCache<Long, BakedModel>(1024)
 
     private var lastTime = 0L
@@ -32,25 +32,39 @@ class VesselBakedModel(
     private var hitCounter = 0
     private var missCounter = 0
 
-    override fun getQuads(
-        state: BlockState?, face: Direction?, random: Random
-    ): List<BakedQuad> = fallback.getQuads(state, face, random)
+    override fun getQuads(state: BlockState?, direction: Direction?, random: RandomSource): List<BakedQuad> {
+        return fallback.getQuads(state, direction, random)
+    }
 
     override fun useAmbientOcclusion(): Boolean = fallback.useAmbientOcclusion()
 
-    override fun hasDepth(): Boolean = fallback.hasDepth()
+    override fun isGui3d(): Boolean {
+        return fallback.isGui3d
+    }
 
-    override fun isSideLit(): Boolean = fallback.isSideLit
+    override fun usesBlockLight(): Boolean {
+        return fallback.usesBlockLight()
+    }
 
-    override fun isBuiltin(): Boolean = false
+    override fun isCustomRenderer(): Boolean {
+        return false
+    }
 
-    override fun getParticleSprite(): Sprite = fallback.particleSprite
+    override fun getParticleIcon(): TextureAtlasSprite {
+        return fallback.particleIcon
+    }
 
-    override fun getTransformation(): ModelTransformation = fallback.transformation
+    override fun getTransforms(): ItemTransforms {
+        return fallback.transforms
+    }
 
-    override fun getOverrides(): ModelOverrideList = object : ModelOverrideList() {
-        override fun apply(
-            model: BakedModel, stack: ItemStack, world: ClientWorld?, entity: LivingEntity?, seed: Int
+    override fun getOverrides() = object : ItemOverrides() {
+        override fun resolve(
+            model: BakedModel,
+            stack: ItemStack,
+            level: ClientLevel?,
+            entity: LivingEntity?,
+            seed: Int
         ): BakedModel {
             val now = System.currentTimeMillis()
             if (now - lastTime >= 1000L) {
@@ -65,7 +79,7 @@ class VesselBakedModel(
 
             val hasher = Fnv64()
             for (component in components) {
-                if (component.codec == null) {
+                if (component.codec() == null) {
                     hasher.updateJson(null)
                     continue
                 }
@@ -74,7 +88,7 @@ class VesselBakedModel(
                     hasher.updateJson(null)
                     continue
                 }
-                val json = toJson(component.codec!!, value)
+                val json = toJson(component.codec()!!, value)
                 hasher.updateJson(json)
             }
             val r = hasher.value()

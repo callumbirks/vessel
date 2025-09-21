@@ -1,12 +1,12 @@
 package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.component.VesselTag
-import net.minecraft.component.DataComponentTypes
-import net.minecraft.component.type.FoodComponent
-import net.minecraft.component.type.FoodComponents
+import net.minecraft.core.component.DataComponents
+import net.minecraft.world.food.FoodProperties
+import net.minecraft.world.food.Foods
 
-abstract class VesselFood(tag: VesselTag, food: FoodComponent = FoodComponents.BREAD): VesselItem(tag) {
+abstract class VesselFood(tag: VesselTag, food: FoodProperties = Foods.BREAD): VesselItem(tag) {
     init {
-        addComponent(DataComponentTypes.FOOD) { food }
+        addComponent(DataComponents.FOOD) { food }
     }
 }

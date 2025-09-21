@@ -4,54 +4,48 @@ import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.api.VesselRegistry
 import com.doofcraft.vessel.component.VesselTag
 import com.mojang.serialization.MapCodec
-import net.minecraft.block.BlockRenderType
-import net.minecraft.block.BlockState
-import net.minecraft.block.BlockWithEntity
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.entity.LivingEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.MathHelper
-import net.minecraft.world.World
+import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.Mth
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.BaseEntityBlock
+import net.minecraft.world.level.block.RenderShape
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
 
-class VesselBaseBlock(settings: Settings): BlockWithEntity(settings) {
-    override fun getCodec(): MapCodec<out BlockWithEntity> = createCodec(::VesselBaseBlock)
+class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
+    override fun codec(): MapCodec<out BaseEntityBlock> = simpleCodec(::VesselBaseBlock)
 
-    override fun createBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
         return VesselBaseBlockEntity(pos, state)
     }
 
-    override fun onPlaced(
-        world: World,
-        pos: BlockPos,
-        state: BlockState,
-        placer: LivingEntity?,
-        itemStack: ItemStack
-    ) {
-        if (world.isClient) return
+    override fun setPlacedBy(level: Level, pos: BlockPos, state: BlockState, placer: LivingEntity?, stack: ItemStack) {
+        if (level.isClientSide) return
 
         var yaw = 0f
         if (placer != null) {
-            yaw = kotlin.math.round(MathHelper.wrapDegrees(placer.yaw + 180f) / 45f) * 45f
+            yaw = kotlin.math.round(Mth.wrapDegrees(placer.yRot + 180f) / 45f) * 45f
         }
 
-        val entity = world.getBlockEntity(pos) ?: run {
+        val entity = level.getBlockEntity(pos) ?: run {
             VesselMod.LOGGER.trace("VesselBaseBlock placed but no BlockEntity found at pos")
             return
         }
 
         if (entity is VesselBaseBlockEntity) {
-            entity.initialize(itemStack, yaw)
+            entity.initialize(stack, yaw)
             entity.item.get(VesselTag.COMPONENT)?.let {
                 val block = VesselRegistry.getBlock(it.key)
                     ?: return@let
-                block.onPlaced(world as ServerWorld, pos, placer, entity.item)
+                block.onPlaced(level as ServerLevel, pos, placer, entity.item)
             }
         }
     }
 
-    override fun getRenderType(state: BlockState?): BlockRenderType {
-        return BlockRenderType.INVISIBLE
+    override fun getRenderShape(state: BlockState): RenderShape {
+        return RenderShape.INVISIBLE
     }
 }

@@ -2,9 +2,9 @@ package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.component.VesselTag
-import net.minecraft.item.ItemStack
-import net.minecraft.registry.Registries
-import net.minecraft.util.Identifier
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.ItemStack
 import kotlin.jvm.optionals.getOrNull
 
 object VesselRegistry {
@@ -27,32 +27,33 @@ object VesselRegistry {
 
     fun find(key: String): ItemStackFactory? {
         if (key.contains(':')) {
-            return find(Identifier.of(key))
+            return find(ResourceLocation.parse(key))
         }
-        return items[key] ?: blocks[key] ?: Registries.ITEM.getOrEmpty(Identifier.ofVanilla(key))
+        return items[key] ?: blocks[key] ?: BuiltInRegistries.ITEM.getHolder(ResourceLocation.withDefaultNamespace(key))
             .getOrNull()
-            ?.let { VanillaItemFactory(it) }
+            ?.let { VanillaItemFactory(it.value()) }
     }
 
-    fun find(key: Identifier): ItemStackFactory? {
+    fun find(key: ResourceLocation): ItemStackFactory? {
         if (key.namespace == VesselMod.MODID) {
             return items[key.path] ?: blocks[key.path]
         }
-        val item = Registries.ITEM.get(key)
-        return VanillaItemFactory(item)
+        return BuiltInRegistries.ITEM.getHolder(key).getOrNull()?.let { VanillaItemFactory(it.value()) }
     }
 
     fun find(key: VesselIdentifier): ItemStackFactory? {
         return when (key.namespace) {
             null, VesselMod.MODID -> items[key.path] ?: blocks[key.path]
-            else -> VanillaItemFactory(Registries.ITEM.get(key.toIdentifier()))
+            else -> BuiltInRegistries.ITEM.getHolder(key.toIdentifier())
+                .getOrNull()
+                ?.let { VanillaItemFactory(it.value()) }
         }
     }
 
     fun match(stack: ItemStack): VesselIdentifier {
         val tag = stack.get(VesselTag.COMPONENT)
         if (tag == null) {
-            val id = stack.registryEntry.key.getOrNull()?.value ?: Identifier.ofVanilla("air")
+            val id = stack.itemHolder.unwrapKey().getOrNull()?.location() ?: ResourceLocation.withDefaultNamespace("air")
             return VesselIdentifier.of(id.namespace, id.path)
         }
         return VesselIdentifier.vessel(tag.key)

@@ -1,8 +1,8 @@
 package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.VesselMod
-import net.minecraft.util.Identifier
-import net.minecraft.util.InvalidIdentifierException
+import net.minecraft.ResourceLocationException
+import net.minecraft.resources.ResourceLocation
 
 data class VesselIdentifier(
     val namespace: String? = null,
@@ -12,8 +12,8 @@ data class VesselIdentifier(
         return "${namespace ?: VesselMod.MODID}:$path"
     }
 
-    fun toIdentifier(): Identifier {
-        return Identifier.of(namespace ?: VesselMod.MODID, path)
+    fun toIdentifier(): ResourceLocation {
+        return ResourceLocation.fromNamespaceAndPath(namespace ?: VesselMod.MODID, path)
     }
 
     fun effectiveNamespace(): String = namespace ?: VesselMod.MODID
@@ -51,7 +51,7 @@ data class VesselIdentifier(
         }
 
         fun parse(id: String): VesselIdentifier {
-            return tryParse(id) ?: throw InvalidIdentifierException("Invalid VesselIdentifier")
+            return tryParse(id) ?: throw ResourceLocationException("Invalid VesselIdentifier")
         }
 
         fun of(namespace: String, path: String): VesselIdentifier {

@@ -7,7 +7,7 @@ import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactories
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers
 
 @Environment(EnvType.CLIENT)
 object VesselClient : ClientModInitializer {
@@ -17,7 +17,7 @@ object VesselClient : ClientModInitializer {
             VesselMod.LOGGER.info("Registering ModelLoadingPlugin...")
             ctx.resolveModel().register(VesselModelResolver)
         }
-        BlockEntityRendererFactories.register(ModBlockEntities.VESSEL) { ctx ->
+        BlockEntityRenderers.register(ModBlockEntities.VESSEL) { ctx ->
             VesselBlockEntityRenderer(ctx)
         }
 	}

@@ -1,8 +1,8 @@
 package com.doofcraft.vessel.model
 
-import net.minecraft.util.Identifier
+import net.minecraft.resources.ResourceLocation
 
 data class VesselUnbakedOverride(
     val predicate: VesselPredicate,
-    val model: Identifier
+    val model: ResourceLocation
 )

@@ -5,15 +5,15 @@ import com.doofcraft.vessel.registry.ModBlocks
 import com.doofcraft.vessel.registry.ModComponents
 import com.doofcraft.vessel.registry.ModItems
 import net.fabricmc.api.ModInitializer
-import net.minecraft.util.Identifier
+import net.minecraft.resources.ResourceLocation
 import org.slf4j.LoggerFactory
 
 object VesselMod : ModInitializer {
     const val MODID = "vessel"
     val LOGGER = LoggerFactory.getLogger(MODID)
 
-    fun vesselResource(name: String): Identifier {
-        return Identifier.of(MODID, name)
+    fun vesselResource(name: String): ResourceLocation {
+        return ResourceLocation.fromNamespaceAndPath(MODID, name)
     }
 
     override fun onInitialize() {

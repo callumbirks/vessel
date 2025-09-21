@@ -3,7 +3,7 @@ package com.doofcraft.vessel.component
 import com.doofcraft.vessel.registry.ModComponents
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.component.ComponentType
+import net.minecraft.core.component.DataComponentType
 
 data class VesselTag(val key: String, val type: String) {
     companion object {
@@ -14,7 +14,7 @@ data class VesselTag(val key: String, val type: String) {
             ).apply(it, ::VesselTag)
         }
 
-        val COMPONENT: ComponentType<VesselTag>
+        val COMPONENT: DataComponentType<VesselTag>
             get() = ModComponents.VESSEL_TAG
     }
 }

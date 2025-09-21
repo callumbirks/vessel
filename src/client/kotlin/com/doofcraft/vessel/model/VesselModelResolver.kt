@@ -5,9 +5,9 @@ import com.squareup.moshi.JsonReader
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelResolver
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.render.model.UnbakedModel
-import net.minecraft.util.Identifier
+import net.minecraft.client.Minecraft
+import net.minecraft.client.resources.model.UnbakedModel
+import net.minecraft.resources.ResourceLocation
 import okio.buffer
 import okio.source
 
@@ -20,14 +20,14 @@ object VesselModelResolver: ModelResolver {
             "item/item", "block/block", "item/block_item" -> {}
             else -> return null
         }
-        val rm = MinecraftClient.getInstance().resourceManager
-        val resId = Identifier.of(context.id().namespace, "models/${context.id().path}.json")
+        val rm = Minecraft.getInstance().resourceManager
+        val resId = ResourceLocation.fromNamespaceAndPath(context.id().namespace, "models/${context.id().path}.json")
         val res = rm.getResource(resId).orElse(null) ?: run {
             VesselMod.LOGGER.warn("Failed to get Resource with id $resId")
             return null
         }
 
-        res.inputStream.use { stream ->
+        res.open().use { stream ->
             val source = stream.source().buffer()
             val json = JsonReader.of(source)
             return VesselUnbakedModel.Deserializer().fromJson(json)

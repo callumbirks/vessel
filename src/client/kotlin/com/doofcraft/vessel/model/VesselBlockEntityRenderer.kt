@@ -1,44 +1,43 @@
 package com.doofcraft.vessel.model
 
 import com.doofcraft.vessel.base.VesselBaseBlockEntity
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.render.OverlayTexture
-import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.render.WorldRenderer
-import net.minecraft.client.render.block.entity.BlockEntityRenderer
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactory
-import net.minecraft.client.render.model.json.ModelTransformationMode
-import net.minecraft.client.util.math.MatrixStack
-import net.minecraft.util.math.RotationAxis
+import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.math.Axis
+import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.LevelRenderer
+import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider
+import net.minecraft.client.renderer.texture.OverlayTexture
+import net.minecraft.world.item.ItemDisplayContext
 
-class VesselBlockEntityRenderer(context: BlockEntityRendererFactory.Context) :
+class VesselBlockEntityRenderer(context: BlockEntityRendererProvider.Context) :
     BlockEntityRenderer<VesselBaseBlockEntity> {
-    private val itemRenderer = MinecraftClient.getInstance().itemRenderer
+    private val itemRenderer = Minecraft.getInstance().itemRenderer
 
     override fun render(
-        entity: VesselBaseBlockEntity,
-        tickDelta: Float,
-        matrices: MatrixStack,
-        vertexConsumers: VertexConsumerProvider,
-        light: Int,
-        overlay: Int
+        blockEntity: VesselBaseBlockEntity,
+        partialTick: Float,
+        poseStack: PoseStack,
+        bufferSource: MultiBufferSource,
+        packedLight: Int,
+        packedOverlay: Int
     ) {
-        val stack = entity.item
-        if (stack.isEmpty) return
+        val stack = blockEntity.item
+        if (stack.isEmpty || blockEntity.level == null) return
 
-        matrices.push()
-        matrices.translate(0.5, 0.0, 0.5)
+        poseStack.pushPose()
+        poseStack.translate(0.5, 0.0, 0.5)
 
-        matrices.multiply(RotationAxis.NEGATIVE_Y.rotationDegrees(entity.yaw))
+        poseStack.mulPose(Axis.YN.rotationDegrees(blockEntity.yaw))
 
-        val mode = ModelTransformationMode.GROUND
-        val model = itemRenderer.getModel(stack, entity.world, null, entity.pos.asLong().toInt())
-        val packedLight = WorldRenderer.getLightmapCoordinates(entity.world, entity.pos)
+        val model = itemRenderer.getModel(stack, blockEntity.level, null, blockEntity.blockPos.asLong().toInt())
+        val packedLight = LevelRenderer.getLightColor(blockEntity.level!!, blockEntity.blockState, blockEntity.blockPos)
 
-        itemRenderer.renderItem(
-            stack, mode, false, matrices, vertexConsumers, packedLight, OverlayTexture.DEFAULT_UV, model
+        itemRenderer.render(
+            stack, ItemDisplayContext.GROUND, false, poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY, model
         )
 
-        matrices.pop()
+        poseStack.popPose()
     }
 }

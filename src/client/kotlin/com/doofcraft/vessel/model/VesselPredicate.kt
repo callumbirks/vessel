@@ -10,53 +10,53 @@ import com.squareup.moshi.FromJson
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonReader.Token
-import net.minecraft.component.ComponentType
-import net.minecraft.item.ItemStack
-import net.minecraft.registry.Registries
-import net.minecraft.util.Identifier
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.ItemStack
 
 sealed interface VesselPredicate {
     fun test(stack: ItemStack): Boolean
-    fun componentList(): List<Identifier>
+    fun componentList(): List<ResourceLocation>
 
     data class ComponentOp(
-        val componentId: Identifier, val path: String?, val op: JsonOp
+        val componentId: ResourceLocation, val path: String?, val op: JsonOp
     ) : VesselPredicate {
-        val component: ComponentType<kotlin.Any>? by lazy {
+        val component: DataComponentType<kotlin.Any>? by lazy {
             resolveComponent(componentId)
         }
 
         override fun test(stack: ItemStack): Boolean {
             if (component == null) return false
-            val componentValue = stack.get(component) ?: return op is JsonOp.Exists && !op.value
-            val json = toJson(component!!.codec!!, componentValue) ?: return false
+            val componentValue = stack.get(component!!) ?: return op is JsonOp.Exists && !op.value
+            val json = toJson(component!!.codec()!!, componentValue) ?: return false
             val elem = jsonPointer(json, path)
             if (elem !is JsonPrimitive?) return false
             return op.test(elem)
         }
 
-        override fun componentList(): List<Identifier> {
+        override fun componentList(): List<ResourceLocation> {
             return listOf(this.componentId)
         }
     }
 
     data class All(val children: List<VesselPredicate>) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = children.all { it.test(stack) }
-        override fun componentList(): List<Identifier> {
+        override fun componentList(): List<ResourceLocation> {
             return this.children.flatMap { it.componentList() }
         }
     }
 
     data class Any(val children: List<VesselPredicate>) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = children.any { it.test(stack) }
-        override fun componentList(): List<Identifier> {
+        override fun componentList(): List<ResourceLocation> {
             return this.children.flatMap { it.componentList() }
         }
     }
 
     data class Not(val child: VesselPredicate) : VesselPredicate {
         override fun test(stack: ItemStack): Boolean = !child.test(stack)
-        override fun componentList(): List<Identifier> {
+        override fun componentList(): List<ResourceLocation> {
             return this.child.componentList()
         }
     }
@@ -85,7 +85,7 @@ sealed interface VesselPredicate {
         @FromJson
         fun fromJson(reader: JsonReader): VesselPredicate {
             reader.beginObject()
-            var component: Identifier? = null
+            var component: ResourceLocation? = null
             var path: String? = null
             var op: JsonOp? = null
             while (reader.hasNext()) {
@@ -108,7 +108,7 @@ sealed interface VesselPredicate {
                         return Not(pred)
                     }
 
-                    "component" -> component = Identifier.of(reader.nextString())
+                    "component" -> component = ResourceLocation.parse(reader.nextString())
                     "path" -> path = reader.nextString()
                     "exists" -> op = JsonOp.Exists(reader.nextBoolean())
                     "eq" -> op = JsonOp.Eq(readPrimitive(reader))
@@ -167,8 +167,8 @@ fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun resolveComponent(id: Identifier): ComponentType<Any>? {
-    return Registries.DATA_COMPONENT_TYPE.get(id) as? ComponentType<Any>
+fun resolveComponent(id: ResourceLocation): DataComponentType<Any>? {
+    return BuiltInRegistries.DATA_COMPONENT_TYPE.get(id) as? DataComponentType<Any>
 }
 
 fun <T> toJson(codec: Codec<T>, value: T): JsonElement? {

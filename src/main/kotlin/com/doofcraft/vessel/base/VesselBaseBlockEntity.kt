@@ -9,6 +9,7 @@ import net.minecraft.network.protocol.Packet
 import net.minecraft.network.protocol.game.ClientGamePacketListener
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
 
@@ -24,14 +25,14 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         }
         this.item = item.copyWithCount(1)
         this.yaw = yaw
-        setChanged()
+        setChangedAndSync()
     }
 
     fun updateItem(fn: (ItemStack) -> Unit): ItemStack {
         fn.invoke(item)
         val newItem = item.copyWithCount(1)
         item = newItem
-        setChanged()
+        setChangedAndSync()
         return item
     }
 
@@ -53,5 +54,10 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
 
     override fun getUpdatePacket(): Packet<ClientGamePacketListener?>? {
         return ClientboundBlockEntityDataPacket.create(this)
+    }
+
+    fun setChangedAndSync() {
+        setChanged()
+        level?.sendBlockUpdated(worldPosition, blockState, blockState, Block.UPDATE_CLIENTS)
     }
 }

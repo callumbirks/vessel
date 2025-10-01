@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.ItemLike
+import net.minecraft.world.level.LevelAccessor
 
 abstract class VesselBlock(tag: VesselTag) : Vessel(tag) {
     override val baseItem: ItemLike = ModItems.VESSEL_BLOCK
@@ -21,6 +22,9 @@ abstract class VesselBlock(tag: VesselTag) : Vessel(tag) {
         return InteractionResult.PASS
     }
 
-    open fun onPlaced(level: ServerLevel, pos: BlockPos, placer: LivingEntity?, stack: ItemStack) {
+    open fun onPlaced(level: ServerLevel, pos: BlockPos, placer: LivingEntity?, entity: VesselBaseBlockEntity) {
+    }
+
+    open fun onDestroyed(level: LevelAccessor, pos: BlockPos, entity: VesselBaseBlockEntity) {
     }
 }

@@ -8,8 +8,10 @@ import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.LevelAccessor
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.RenderShape
 import net.minecraft.world.level.block.entity.BlockEntity
@@ -40,9 +42,30 @@ class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
             entity.item.get(VesselTag.COMPONENT)?.let {
                 val block = VesselRegistry.getBlock(it.key)
                     ?: return@let
-                block.onPlaced(level as ServerLevel, pos, placer, entity.item)
+                block.onPlaced(level as ServerLevel, pos, placer, entity)
             }
         }
+    }
+
+    override fun onRemove(
+        state: BlockState,
+        level: Level,
+        pos: BlockPos,
+        newState: BlockState,
+        movedByPiston: Boolean
+    ) {
+        val entity = level.getBlockEntity(pos) ?: run {
+            VesselMod.LOGGER.trace("VesselBaseBlock destroyed but no BlockEntity found at pos")
+            return super.onRemove(state, level, pos, newState, movedByPiston)
+        }
+
+        if (entity is VesselBaseBlockEntity) {
+            entity.item.get(VesselTag.COMPONENT)?.let {
+                val block = VesselRegistry.getBlock(it.key) ?: return@let
+                block.onDestroyed(level, pos, entity)
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston)
     }
 
     override fun getRenderShape(state: BlockState): RenderShape {

@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
+import com.doofcraft.vessel.api.VesselEvents
 import com.doofcraft.vessel.api.VesselRegistry
 import com.doofcraft.vessel.component.VesselTag
 import com.mojang.serialization.MapCodec
@@ -27,23 +28,16 @@ class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
     override fun setPlacedBy(level: Level, pos: BlockPos, state: BlockState, placer: LivingEntity?, stack: ItemStack) {
         if (level.isClientSide) return
 
-        var yaw = 0f
-        if (placer != null) {
-            yaw = kotlin.math.round(Mth.wrapDegrees(placer.yRot + 180f) / 45f) * 45f
-        }
-
-        val entity = level.getBlockEntity(pos) ?: run {
+        val entity = level.getBlockEntity(pos) as VesselBaseBlockEntity? ?: run {
             VesselMod.LOGGER.trace("VesselBaseBlock placed but no BlockEntity found at pos")
             return
         }
 
-        if (entity is VesselBaseBlockEntity) {
-            entity.initialize(stack, yaw)
-            entity.item.get(VesselTag.COMPONENT)?.let {
-                val block = VesselRegistry.getBlock(it.key)
-                    ?: return@let
-                block.onPlaced(level as ServerLevel, pos, placer, entity)
-            }
+        entity.item.get(VesselTag.COMPONENT)?.let { tag ->
+            val block = VesselRegistry.getBlock(tag.key)
+                ?: return@let
+            block.onPlaced(level as ServerLevel, pos, placer, entity)
+            VesselEvents.BLOCK_ENTITY_LOAD.invoker().onLoad(entity, level)
         }
     }
 

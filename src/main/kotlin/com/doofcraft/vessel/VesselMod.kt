@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 
 object VesselMod : ModInitializer {
     const val MODID = "vessel"
+    @JvmField
     val LOGGER = LoggerFactory.getLogger(MODID)
 
     fun vesselResource(name: String): ResourceLocation {

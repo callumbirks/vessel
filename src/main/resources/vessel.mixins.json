@@ -4,7 +4,7 @@
     "compatibilityLevel": "JAVA_21",
     "server": [
         "ItemMixin",
-        "BlockEntityMixin"
+        "LevelChunkMixin"
     ],
     "injectors": {
         "defaultRequire": 1

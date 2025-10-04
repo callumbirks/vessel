@@ -4,6 +4,7 @@ import com.doofcraft.vessel.VesselMod
 import com.doofcraft.vessel.registry.ModBlockEntities
 import net.minecraft.core.BlockPos
 import net.minecraft.core.HolderLookup
+import net.minecraft.core.component.DataComponentType
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.protocol.Packet
 import net.minecraft.network.protocol.game.ClientGamePacketListener
@@ -19,6 +20,8 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
 
     var yaw: Float = 0f
 
+    fun isInitialized(): Boolean = !item.isEmpty
+
     fun initialize(item: ItemStack, yaw: Float = 0f) {
         if (!this.item.isEmpty) {
             VesselMod.LOGGER.warn("BlockEntity initialized multiple times")
@@ -28,12 +31,28 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         setChangedAndSync()
     }
 
-    fun updateItem(fn: (ItemStack) -> Unit): ItemStack {
-        fn.invoke(item)
-        val newItem = item.copyWithCount(1)
-        item = newItem
+    fun <T> has(component: DataComponentType<T>): Boolean = item.has(component)
+
+    fun <T> get(component: DataComponentType<T>): T? = item.get(component)
+
+    fun <T> set(component: DataComponentType<T>, value: T): T? {
+        val result = item.set(component, value)
+        setItemChanged()
+        return result
+    }
+
+    fun <T> remove(component: DataComponentType<T>): T? {
+        val result = item.remove(component)
+        setItemChanged()
+        return result
+    }
+
+    /**
+     * Must be used whenever `item` changes, otherwise changes will not sync properly.
+     */
+    fun setItemChanged() {
+        item = item.copyWithCount(1)
         setChangedAndSync()
-        return item
     }
 
     override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {

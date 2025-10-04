@@ -3,7 +3,8 @@
     "package": "com.doofcraft.vessel.mixin",
     "compatibilityLevel": "JAVA_21",
     "server": [
-        "ItemMixin"
+        "ItemMixin",
+        "BlockEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1

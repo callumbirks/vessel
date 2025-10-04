@@ -76,4 +76,16 @@ object VesselRegistry {
     fun removeItem(key: String) {
         items.remove(key)
     }
+
+    fun <T: VesselBlock> removeBlocks(clazz: Class<T>) {
+        for (key in blocks.filterValues { clazz.isInstance(it) }.keys) {
+            blocks.remove(key)
+        }
+    }
+
+    fun <T: VesselItem> removeItems(clazz: Class<T>) {
+        for (key in items.filterValues { clazz.isInstance(it) }.keys) {
+            items.remove(key)
+        }
+    }
 }

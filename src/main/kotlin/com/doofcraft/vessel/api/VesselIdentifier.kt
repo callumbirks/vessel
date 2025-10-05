@@ -1,13 +1,21 @@
 package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.VesselMod
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import net.minecraft.ResourceLocationException
 import net.minecraft.resources.ResourceLocation
 
+@Serializable(with = VesselIdentifier.Companion.StringSerializer::class)
 data class VesselIdentifier(
     val namespace: String? = null,
     val path: String,
-): Comparable<VesselIdentifier> {
+) : Comparable<VesselIdentifier> {
     override fun toString(): String {
         return "${namespace ?: VesselMod.MODID}:$path"
     }
@@ -32,7 +40,7 @@ data class VesselIdentifier(
     override fun compareTo(other: VesselIdentifier): Int {
         var result = this.path.compareTo(other.path)
         if (result == 0) {
-           result = this.effectiveNamespace().compareTo(other.effectiveNamespace())
+            result = this.effectiveNamespace().compareTo(other.effectiveNamespace())
         }
 
         return result
@@ -60,6 +68,24 @@ data class VesselIdentifier(
 
         fun vessel(key: String): VesselIdentifier {
             return VesselIdentifier(null, key)
+        }
+
+        object StringSerializer : KSerializer<VesselIdentifier> {
+            override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+                "com.doofcraft.vessel.Identifier", PrimitiveKind.STRING
+            )
+
+            override fun serialize(
+                encoder: Encoder, value: VesselIdentifier
+            ) {
+                encoder.encodeString(value.toString())
+            }
+
+            override fun deserialize(decoder: Decoder): VesselIdentifier {
+                val str = decoder.decodeString()
+                return VesselIdentifier.parse(str)
+            }
+
         }
     }
 }

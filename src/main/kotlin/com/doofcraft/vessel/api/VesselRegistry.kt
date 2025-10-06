@@ -1,6 +1,9 @@
 package com.doofcraft.vessel.api
 
 import com.doofcraft.vessel.VesselMod
+import com.doofcraft.vessel.api.item.VanillaItemFactory
+import com.doofcraft.vessel.api.item.VesselBlock
+import com.doofcraft.vessel.api.item.VesselItem
 import com.doofcraft.vessel.component.VesselTag
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
@@ -48,6 +51,18 @@ object VesselRegistry {
                 .getOrNull()
                 ?.let { VanillaItemFactory(it.value()) }
         }
+    }
+
+    fun findOrThrow(key: String): ItemStackFactory {
+        return find(key) ?: throw NoSuchElementException("No such item '$key'")
+    }
+
+    fun findOrThrow(key: ResourceLocation): ItemStackFactory {
+        return find(key) ?: throw NoSuchElementException("No such item '$key'")
+    }
+
+    fun findOrThrow(key: VesselIdentifier): ItemStackFactory {
+        return find(key) ?: throw NoSuchElementException("No such item '$key'")
     }
 
     fun match(stack: ItemStack): VesselIdentifier {

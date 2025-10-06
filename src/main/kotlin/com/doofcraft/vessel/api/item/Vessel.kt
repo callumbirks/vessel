@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.api
+package com.doofcraft.vessel.api.item
 
 import com.doofcraft.vessel.component.VesselTag
 import com.doofcraft.vessel.util.component.ComponentEntry
@@ -6,7 +6,7 @@ import net.minecraft.core.component.DataComponentType
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.ItemLike
 
-abstract class Vessel(val tag: VesselTag): ItemStackFactory {
+abstract class Vessel(val tag: VesselTag): com.doofcraft.vessel.api.ItemStackFactory {
     protected abstract val baseItem: ItemLike
     private val components = mutableListOf<ComponentEntry<*>>(
         ComponentEntry(VesselTag.COMPONENT) { tag }

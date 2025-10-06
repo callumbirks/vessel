@@ -16,15 +16,8 @@ base {
 repositories {
     mavenCentral()
     maven { url "https://maven.parchmentmc.org" }
-}
-
-configurations {
-    transitiveInclude {
-        exclude(group: "com.mojang")
-        exclude(group: "org.jetbrains.kotlin")
-        exclude(group: "org.jetbrains.kotlinx")
-        exclude(group: "net.fabricmc")
-    }
+    // for MineDown:
+    maven { url "https://repo.minebench.de" }
 }
 
 loom {
@@ -53,16 +46,17 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
 
+    implementation "net.kyori:adventure-api:${project.adventure_api_version}"
+    modImplementation "net.kyori:adventure-platform-fabric:${project.adventure_fabric_version}"
+
     // Moshi
-    transitiveInclude(implementation "com.squareup.moshi:moshi:${project.moshi_version}")
-    transitiveInclude(implementation "dev.zacsweers.moshix:moshi-sealed-runtime:${project.moshi_sealed_version}")
+    include(implementation "com.squareup.moshi:moshi:${project.moshi_version}")
+    include(implementation "dev.zacsweers.moshix:moshi-sealed-runtime:${project.moshi_sealed_version}")
+
+    include(implementation "de.themoep:minedown-adventure:${project.minedown_version}")
 
     ksp "com.squareup.moshi:moshi-kotlin-codegen:${project.moshi_version}"
     ksp "dev.zacsweers.moshix:moshi-sealed-codegen:${project.moshi_sealed_version}"
-
-    configurations.transitiveInclude.resolvedConfiguration.resolvedArtifacts.forEach {
-        include(it.moduleVersion.id.toString())
-    }
 }
 
 processResources {

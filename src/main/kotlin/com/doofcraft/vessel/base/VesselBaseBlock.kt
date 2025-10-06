@@ -1,7 +1,7 @@
 package com.doofcraft.vessel.base
 
 import com.doofcraft.vessel.VesselMod
-import com.doofcraft.vessel.api.VesselEvents
+import com.doofcraft.vessel.api.events.VesselEvents
 import com.doofcraft.vessel.api.VesselRegistry
 import com.doofcraft.vessel.component.VesselTag
 import com.mojang.serialization.MapCodec

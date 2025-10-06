@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.api
+package com.doofcraft.vessel.api.item
 
 import com.doofcraft.vessel.component.VesselTag
 import com.doofcraft.vessel.registry.ModItems
@@ -10,7 +10,7 @@ import net.minecraft.world.InteractionResultHolder
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
 
-abstract class VesselItem(tag: VesselTag): Vessel(tag) {
+abstract class VesselItem(tag: VesselTag): com.doofcraft.vessel.api.item.Vessel(tag) {
     override val baseItem = ModItems.VESSEL
 
     open fun use(

@@ -1,7 +1,6 @@
 package com.doofcraft.vessel.mixin;
 
-import com.doofcraft.vessel.VesselMod;
-import com.doofcraft.vessel.api.VesselEvents;
+import com.doofcraft.vessel.api.events.VesselEvents;
 import com.doofcraft.vessel.base.VesselBaseBlockEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;

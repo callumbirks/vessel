@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.api
+package com.doofcraft.vessel.api.item
 
 import com.doofcraft.vessel.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.component.VesselTag
@@ -12,7 +12,7 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.level.ItemLike
 import net.minecraft.world.level.LevelAccessor
 
-abstract class VesselBlock(tag: VesselTag) : Vessel(tag) {
+abstract class VesselBlock(tag: VesselTag) : com.doofcraft.vessel.api.item.Vessel(tag) {
     override val baseItem: ItemLike = ModItems.VESSEL_BLOCK
 
     open fun use(

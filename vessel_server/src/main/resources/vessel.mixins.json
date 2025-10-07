@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "package": "com.doofcraft.vessel.server.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "server": [
+        "ItemMixin",
+        "LevelChunkMixin",
+        "BlockMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

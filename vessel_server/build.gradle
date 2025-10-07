@@ -1,0 +1,37 @@
+plugins {
+    id "fabric-loom"
+    id "org.jetbrains.kotlin.jvm"
+    id "org.jetbrains.kotlin.plugin.serialization"
+}
+
+base.archivesName.set("${rootProject.name}_server")
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-1.21:${project.parchment_version}")
+    }
+
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    include(implementation(project(path: ":vessel_common", configuration: "namedElements")))
+
+    implementation "net.kyori:adventure-api:${project.adventure_api_version}"
+    transitiveInclude(implementation "de.themoep:minedown-adventure:${project.minedown_version}")
+    modImplementation "net.kyori:adventure-platform-fabric:${project.adventure_fabric_version}"
+
+    configurations.transitiveInclude.resolvedConfiguration.resolvedArtifacts.forEach {
+        include(it.moduleVersion.id.toString())
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}

@@ -8,3 +8,11 @@ pluginManagement {
 		gradlePluginPortal()
 	}
 }
+
+rootProject.name = "vessel"
+
+include(
+        "vessel_common",
+        "vessel_client",
+        "vessel_server"
+)

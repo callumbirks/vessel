@@ -1,0 +1,81 @@
+package com.doofcraft.vessel.common.base
+
+import com.doofcraft.vessel.common.registry.ModBlockEntities
+import net.minecraft.core.BlockPos
+import net.minecraft.core.HolderLookup
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
+
+class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBlockEntities.VESSEL, pos, state) {
+    var item: ItemStack = ItemStack.EMPTY
+        private set
+
+    var yaw: Float = 0f
+
+    fun isInitialized(): Boolean = !item.isEmpty
+
+    fun initialize(item: ItemStack, yaw: Float = 0f) {
+        if (!this.item.isEmpty) {
+            VesselMod.LOGGER.warn("BlockEntity initialized multiple times")
+        }
+        this.item = item.copyWithCount(1)
+        this.yaw = yaw
+        setChangedAndSync()
+    }
+
+    fun <T> has(component: DataComponentType<T>): Boolean = item.has(component)
+
+    fun <T> get(component: DataComponentType<T>): T? = item.get(component)
+
+    fun <T> set(component: DataComponentType<T>, value: T): T? {
+        val result = item.set(component, value)
+        setItemChanged()
+        return result
+    }
+
+    fun <T> remove(component: DataComponentType<T>): T? {
+        val result = item.remove(component)
+        setItemChanged()
+        return result
+    }
+
+    /**
+     * Must be used whenever `item` changes, otherwise changes will not sync properly.
+     */
+    fun setItemChanged() {
+        item = item.copyWithCount(1)
+        setChangedAndSync()
+    }
+
+    override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        item = tag.getCompound("item").let { ItemStack.parse(registries, it).orElse(ItemStack.EMPTY) }
+        yaw = tag.getFloat("yaw")
+    }
+
+    override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
+        if (!item.isEmpty) tag.put("item", item.save(registries))
+        tag.putFloat("yaw", yaw)
+    }
+
+    override fun getUpdateTag(registries: HolderLookup.Provider): CompoundTag? {
+        val tag = super.getUpdateTag(registries)
+        saveAdditional(tag, registries)
+        return tag
+    }
+
+    override fun getUpdatePacket(): Packet<ClientGamePacketListener?>? {
+        return ClientboundBlockEntityDataPacket.create(this)
+    }
+
+    fun setChangedAndSync() {
+        setChanged()
+        level?.sendBlockUpdated(worldPosition, blockState, blockState, Block.UPDATE_CLIENTS)
+    }
+}

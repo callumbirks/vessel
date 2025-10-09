@@ -8,6 +8,7 @@ import com.doofcraft.vessel.server.ui.data.DataExecutor
 import com.doofcraft.vessel.server.ui.data.DataPlan
 import com.doofcraft.vessel.server.ui.data.DataPlanner
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
+import com.doofcraft.vessel.server.ui.expr.Scope
 import com.doofcraft.vessel.server.ui.handler.GenericInventoryScreenHandler
 import com.doofcraft.vessel.server.ui.handler.InventoryMenuContainer
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
@@ -27,7 +28,7 @@ import kotlin.let
 import kotlin.run
 
 class MenuService(
-    private val engine: ExprEngine,
+    val engine: ExprEngine,
     private val renderer: WidgetRenderer,
     private val executor: DataExecutor,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -42,12 +43,12 @@ class MenuService(
 
     private val open = ConcurrentHashMap<String, OpenMenu>() // playerUuid -> OpenMenu
 
-    fun openMenu(player: ServerPlayer, def: MenuDefinition, params: Map<String, String>) {
-        val plan = DataPlanner.compile(def)
-        val ctx = UiContext(player.uuid.toString(), def.id, ConcurrentHashMap())
+    fun openMenu(player: ServerPlayer, def: MenuDefinition, params: Map<String, Any?>) {
         def.openParams?.let { req ->
             require(params.keys.containsAll(req.keys)) { "Missing open params" }
         }
+        val plan = DataPlanner.compile(def)
+        val ctx = UiContext(player.uuid.toString(), def.id, params, ConcurrentHashMap())
         val cache = NodeCache()
         val playerUuid = player.uuid.toString()
 
@@ -72,28 +73,11 @@ class MenuService(
     }
 
     fun clickButton(player: ServerPlayer, menuButton: MenuButton) {
-        when (menuButton.action) {
-            MenuButton.Action.CLOSE -> player.closeContainer()
-            MenuButton.Action.NAVIGATE -> {
-                val target = menuButton.data["target"]
-                if (target != null) {
-                    val menu = MenuRegistry.getOrThrow(target)
-                    openMenu(player, menu, menuButton.data)
-                } else {
-                    player.closeContainer()
-                }
-            }
-            MenuButton.Action.ACCEPT -> {
-                val cmdId = menuButton.data["cmd"]
-                    ?: return
-                val argsJson = menuButton.data["args"]
-                val ctx = getContext(player)
-                    ?: return
-                val cmd = CommandBus.get(cmdId)
-                scope.launch {
-                    cmd.run(ctx, null, argsJson)
-                }
-            }
+        val cmd = CommandBus.get(menuButton.cmd)
+        val ctx = getContext(player)
+            ?: return
+        scope.launch {
+            cmd.run(ctx, null, menuButton.args)
         }
     }
 
@@ -106,13 +90,21 @@ class MenuService(
     ) {
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
         val values = executor.executeAll(plan, ctx, cache)
-        val rendered = renderer.renderAll(plan.def, values, ctx.state, player)
+        val scope = Scope(
+            menu = mapOf("id" to plan.def.id),
+            params = ctx.params,
+            player = mapOf("uuid" to ctx.playerUuid),
+            nodeValues = values,
+            state = ctx.state
+        )
+        val renderedTitle = engine.renderTemplate(plan.def.title, scope)
+        val rendered = renderer.renderAll(plan.def, renderedTitle, values, ctx.state, player)
 
         val openMenu =
             (player.containerMenu as? GenericInventoryScreenHandler)?.container as? InventoryMenuContainer ?: run {
                 if (nodes == null) {
                     // this is the first refresh, open the menu
-                    val m = InventoryMenuContainer(plan.def.title, rendered.items.toMutableMap())
+                    val m = InventoryMenuContainer(renderedTitle, plan.def.rows, rendered.items.toMutableMap())
                     m.open(player)
                     m
                 } else {
@@ -121,13 +113,13 @@ class MenuService(
                 }
             }
 
-        if (openMenu.name == plan.def.title) {
+        if (openMenu.name == renderedTitle) {
             // If the name has stayed the same we can just patch the items
             openMenu.patchItems(rendered.items)
         } else {
             // Re-open if the name has changed
             // TODO: Maybe we can do some Packet trickery to avoid this?
-            val newMenu = InventoryMenuContainer(plan.def.title, rendered.items.toMutableMap())
+            val newMenu = InventoryMenuContainer(renderedTitle, plan.def.rows, rendered.items.toMutableMap())
             newMenu.open(player)
         }
     }

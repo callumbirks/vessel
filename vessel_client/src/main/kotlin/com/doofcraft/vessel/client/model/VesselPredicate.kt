@@ -1,26 +1,37 @@
 package com.doofcraft.vessel.client.model
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
+import com.doofcraft.vessel.client.serialization.ResourceLocationSerializer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
-import com.squareup.moshi.FromJson
-import com.squareup.moshi.JsonDataException
-import com.squareup.moshi.JsonReader
-import com.squareup.moshi.JsonReader.Token
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
 
+@Serializable(with = VesselPredicateSerializer::class)
 sealed interface VesselPredicate {
     fun test(stack: ItemStack): Boolean
     fun componentList(): List<ResourceLocation>
 
     data class ComponentOp(
-        val componentId: ResourceLocation, val path: String?, val op: JsonOp
+        @Contextual val componentId: ResourceLocation, val path: String?, val op: JsonOp
     ) : VesselPredicate {
         val component: DataComponentType<kotlin.Any>? by lazy {
             resolveComponent(componentId)
@@ -69,101 +80,115 @@ sealed interface VesselPredicate {
         }
 
         data class Eq(val expect: JsonPrimitive?) : JsonOp {
-            override fun test(actual: JsonPrimitive?) = jsonEquals(actual, expect)
+            override fun test(actual: JsonPrimitive?) = actual == expect
         }
 
         data class Ne(val expect: JsonPrimitive?) : JsonOp {
-            override fun test(actual: JsonPrimitive?) = !jsonEquals(actual, expect)
+            override fun test(actual: JsonPrimitive?) = actual == expect
         }
 
         data class In(val set: List<JsonPrimitive?>) : JsonOp {
-            override fun test(actual: JsonPrimitive?): Boolean = set.any { jsonEquals(actual, it) }
-        }
-    }
-
-    class Deserializer {
-        @FromJson
-        fun fromJson(reader: JsonReader): VesselPredicate {
-            reader.beginObject()
-            var component: ResourceLocation? = null
-            var path: String? = null
-            var op: JsonOp? = null
-            while (reader.hasNext()) {
-                when (reader.nextName()) {
-                    "all" -> {
-                        val list = parseList(reader)
-                        reader.endObject()
-                        return All(list)
-                    }
-
-                    "any" -> {
-                        val list = parseList(reader)
-                        reader.endObject()
-                        return Any(list)
-                    }
-
-                    "not" -> {
-                        val pred = fromJson(reader)
-                        reader.endObject()
-                        return Not(pred)
-                    }
-
-                    "component" -> component = ResourceLocation.parse(reader.nextString())
-                    "path" -> path = reader.nextString()
-                    "exists" -> op = JsonOp.Exists(reader.nextBoolean())
-                    "eq" -> op = JsonOp.Eq(readPrimitive(reader))
-                    "ne" -> JsonOp.Ne(readPrimitive(reader))
-                    "in" -> {
-                        val list = mutableListOf<JsonPrimitive?>()
-                        reader.beginArray()
-                        while (reader.hasNext()) list.add(readPrimitive(reader))
-                        reader.endArray()
-                        op = JsonOp.In(list)
-                    }
-
-                    else -> reader.skipValue()
-                }
-            }
-            reader.endObject()
-            if (component == null) throw JsonDataException("'component' missing from predicate at ${reader.path}")
-            if (op == null) throw JsonDataException("No op specified in predicate at ${reader.path}")
-            return ComponentOp(component, path, op)
-        }
-
-        private fun parseList(reader: JsonReader): List<VesselPredicate> {
-            val list = mutableListOf<VesselPredicate>()
-            reader.beginArray()
-            while (reader.hasNext()) {
-                list.add(fromJson(reader))
-            }
-            reader.endArray()
-            return list
-        }
-
-        private fun readPrimitive(reader: JsonReader): JsonPrimitive? {
-            return when (reader.peek()) {
-                Token.BOOLEAN -> JsonPrimitive(reader.nextBoolean())
-                Token.NUMBER -> JsonPrimitive(reader.nextDouble())
-                Token.STRING -> JsonPrimitive(reader.nextString())
-                Token.NULL -> {
-                    reader.skipValue()
-                    return null
-                }
-                else -> throw JsonDataException("Expected primitive value at ${reader.path}")
-            }
+            override fun test(actual: JsonPrimitive?): Boolean = set.any { actual == it }
         }
     }
 }
 
-fun jsonEquals(a: JsonElement?, b: JsonElement?): Boolean {
-    if (a === b) return true
-    if (a == null || b == null) return false
-    if (a.isJsonPrimitive && b.isJsonPrimitive) {
-        val ap = a.asJsonPrimitive
-        val bp = b.asJsonPrimitive
-        if (ap.isNumber && bp.isNumber) return ap.asDouble == bp.asDouble
+object VesselPredicateSerializer : KSerializer<VesselPredicate> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("com.doofcraft.vessel.VesselPredicate")
+
+    override fun deserialize(decoder: Decoder): VesselPredicate {
+        val jd = decoder as? JsonDecoder ?: error("VesselPredicateSerializer supports JSON only")
+        val elem = jd.decodeJsonElement()
+        val json = jd.json
+        require(elem is JsonObject) { "Expected object" }
+
+        when {
+            "all" in elem -> {
+                val arr = elem.getValue("all")
+                require(arr is JsonArray) { "'all' must be an array" }
+                val children = arr.map { json.decodeFromJsonElement(this, it) }
+                return VesselPredicate.All(children)
+            }
+
+            "any" in elem -> {
+                val arr = elem.getValue("any")
+                require(arr is JsonArray) { "'any' must be an array" }
+                val children = arr.map { json.decodeFromJsonElement(this, it) }
+                return VesselPredicate.Any(children)
+            }
+
+            "not" in elem -> {
+                val child = json.decodeFromJsonElement(this, elem.getValue("not"))
+                return VesselPredicate.Not(child)
+            }
+
+            "component" in elem -> {
+                val comp = elem.getValue("component")
+                val compId = json.decodeFromJsonElement(ResourceLocationSerializer, comp)
+                val path = (elem["path"] as? JsonPrimitive)?.contentOrNull
+                val op = decodeJsonOp(obj = elem, json = json)
+                return VesselPredicate.ComponentOp(compId, path, op)
+            }
+
+            else -> error("Could not determine predicate variant from keys: ${elem.keys}")
+        }
     }
-    return a == b
+
+    override fun serialize(encoder: Encoder, value: VesselPredicate) {
+        // Don't need to serialize
+        encoder.encodeNull()
+    }
+
+    /* --- helpers to delegate JsonOp inside the same JSON object ("structural" sum) --- */
+
+    fun decodeJsonOp(obj: JsonObject, json: Json): VesselPredicate.JsonOp {
+        return when {
+            "exists" in obj -> VesselPredicate.JsonOp.Exists(
+                (obj.getValue("exists") as? JsonPrimitive)?.booleanOrNull ?: error("'exists' must be boolean")
+            )
+
+            "eq" in obj -> VesselPredicate.JsonOp.Eq(
+                (obj["eq"])?.let { it as? JsonPrimitive })
+
+            "ne" in obj -> VesselPredicate.JsonOp.Ne(
+                (obj["ne"])?.let { it as? JsonPrimitive })
+
+            "in" in obj -> {
+                val arr = obj.getValue("in") as? JsonArray ?: error("'in' must be array")
+                val list = arr.map { (it as? JsonPrimitive) }
+                VesselPredicate.JsonOp.In(list)
+            }
+
+            else -> error("No op specified; expected one of exists/eq/ne/in")
+        }
+    }
+
+    fun encodeJsonOp(op: VesselPredicate.JsonOp): Map<String, JsonElement> = when (op) {
+        is VesselPredicate.JsonOp.Exists -> mapOf("exists" to JsonPrimitive(op.value))
+        is VesselPredicate.JsonOp.Eq -> mapOf("eq" to op.expect!!)
+        is VesselPredicate.JsonOp.Ne -> mapOf("ne" to op.expect!!)
+        is VesselPredicate.JsonOp.In -> mapOf(
+            "in" to JsonArray(op.set.map { it!! })
+        )
+    }
+}
+
+object JsonOpSerializer : KSerializer<VesselPredicate.JsonOp> {
+    // This serializer is used only if JsonOp appears standalone (rare).
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("JsonOp")
+    override fun deserialize(decoder: Decoder): VesselPredicate.JsonOp {
+        val jd = decoder as? JsonDecoder ?: error("JsonOpSerializer supports JSON only")
+        val obj = jd.decodeJsonElement()
+        require(obj is JsonObject) { "JsonOp must be an object" }
+        return VesselPredicateSerializer.run {
+            decodeJsonOp(obj, jd.json)
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: VesselPredicate.JsonOp) {
+        val je = encoder as? JsonEncoder ?: error("JsonOpSerializer supports JSON only")
+        je.encodeJsonElement(JsonObject(VesselPredicateSerializer.encodeJsonOp(value)))
+    }
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -173,7 +198,19 @@ fun resolveComponent(id: ResourceLocation): DataComponentType<Any>? {
 
 fun <T> toJson(codec: Codec<T>, value: T): JsonElement? {
     val result = codec.encodeStart(JsonOps.INSTANCE, value)
-    return result.result().orElse(null)
+    val gson = result.result().orElse(null) ?: return null
+    return gson.toKJson()
+}
+
+fun com.google.gson.JsonElement.toKJson(): JsonElement {
+    return if (isJsonNull) JsonNull else if (isJsonArray) JsonArray(asJsonArray.asList().map { it.toKJson() })
+    else if (isJsonObject) JsonObject(asJsonObject.asMap().mapValues { it.value.toKJson() })
+    else {
+        val prim = asJsonPrimitive
+        if (prim.isString) JsonPrimitive(prim.asString)
+        else if (prim.isBoolean) JsonPrimitive(prim.asBoolean)
+        else JsonPrimitive(prim.asDouble)
+    }
 }
 
 private fun jsonPointer(root: JsonElement?, pointer: String?): JsonElement? {
@@ -182,8 +219,8 @@ private fun jsonPointer(root: JsonElement?, pointer: String?): JsonElement? {
     pointer.trim().removePrefix("/").split('/').forEach { raw ->
         val key = raw.replace("~1", "/").replace("~0", "~")
         cur = when (val c = cur) {
-            is JsonObject -> if (c.has(key)) c.get(key) else return null
-            is JsonArray -> key.toIntOrNull()?.let { idx -> c.get(idx) } ?: return null
+            is JsonObject -> if (c.containsKey(key)) c[key] else return null
+            is JsonArray -> key.toIntOrNull()?.let { idx -> c[idx] } ?: return null
             else -> return null
         }
     }

@@ -6,6 +6,7 @@ import com.doofcraft.vessel.server.api.events.world.BlockEntityLoadEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityUnloadEvent
 import com.doofcraft.vessel.server.api.reactive.SimpleObservable
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents
+import net.minecraft.server.level.ServerPlayer
 
 object VesselEvents {
     /**
@@ -19,6 +20,9 @@ object VesselEvents {
      */
     @JvmField
     val BLOCK_ENTITY_UNLOAD = SimpleObservable<BlockEntityUnloadEvent>()
+
+    @JvmField
+    val DATA_SYNCHRONIZED = SimpleObservable<ServerPlayer>()
 
     @JvmField
     val CONTAINER_MENU_CLOSED = SimpleObservable<ContainerMenuClosedEvent>()

@@ -26,7 +26,7 @@ class MenuDefinition(
 
 @Serializable
 data class DataNodeDef(
-    val cmd: String, val args: JsonElement? = null, val input: String? = null, val cache: Cache? = null
+    val cmd: String, val args: Map<String, JsonElement>? = null, val input: String? = null, val cache: Cache? = null
 ) {
     @Serializable
     data class Cache(val ttl: Long? = null)
@@ -102,5 +102,5 @@ sealed class ComponentSpec {
 
 @Serializable
 data class ActionDef(
-    val run: String, val args: JsonElement? = null
+    val run: String, val args: Map<String, String>? = null
 )

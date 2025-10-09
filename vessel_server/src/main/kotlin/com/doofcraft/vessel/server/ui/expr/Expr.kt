@@ -10,6 +10,7 @@ interface ExprEngine {
 
 data class Scope(
     val menu: Map<String, Any?> = emptyMap(),
+    val params: Map<String, Any?> = emptyMap(),
     val player: Map<String, Any?> = emptyMap(),
     val nodeValues: Map<String, Any?> = emptyMap(),
     val value: Any? = null,

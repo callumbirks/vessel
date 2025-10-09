@@ -11,9 +11,10 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.item.ItemStack
 
-class InventoryMenuContainer(val name: String, private val items: MutableMap<Int, ItemStack>) : Container {
+class InventoryMenuContainer(val name: String, rows: Int, private val items: MutableMap<Int, ItemStack>) : Container {
     var syncId: Int = -1
         private set
+    val size = rows * 9
 
     fun patchItems(next: Map<Int, ItemStack>) {
         fun equalStacks(a: ItemStack?, b: ItemStack?): Boolean {
@@ -45,7 +46,7 @@ class InventoryMenuContainer(val name: String, private val items: MutableMap<Int
         return syncId != -1
     }
 
-    override fun getContainerSize() = items.size
+    override fun getContainerSize() = this.size
 
     override fun isEmpty(): Boolean = items.isEmpty()
 

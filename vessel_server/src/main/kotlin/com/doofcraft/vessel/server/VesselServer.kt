@@ -9,7 +9,9 @@ import com.doofcraft.vessel.common.registry.ModItems
 import com.doofcraft.vessel.server.api.VesselRegistry
 import com.doofcraft.vessel.server.ui.UiManager
 import net.fabricmc.api.DedicatedServerModInitializer
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
+import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
@@ -19,13 +21,25 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.BlockHitResult
 
 object VesselServer: DedicatedServerModInitializer {
+    lateinit var server: MinecraftServer
+        private set
+
     override fun onInitializeServer() {
+        ServerLifecycleEvents.SERVER_STARTING.register { server ->
+            this.server = server
+            lateInitialize()
+        }
         ModComponents.register()
         ModItems.register()
         ModBlocks.register()
         ModBlockEntities.register()
         UseBlockCallback.EVENT.register(::useBlock)
         UiManager.register()
+    }
+
+    // Stuff that needs other stuff available (like the `server` property).
+    private fun lateInitialize() {
+        VesselDataProvider.registerDefaults()
     }
 
     fun useBlock(player: Player, world: Level, hand: InteractionHand, blockHitResult: BlockHitResult): InteractionResult {

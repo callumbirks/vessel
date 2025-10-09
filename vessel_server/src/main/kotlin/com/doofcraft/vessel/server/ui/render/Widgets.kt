@@ -3,7 +3,9 @@ package com.doofcraft.vessel.server.ui.render
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
+import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
 import com.doofcraft.vessel.server.ui.model.IconDef
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
@@ -22,13 +24,14 @@ class WidgetRenderer(
 ) {
     fun renderAll(
         def: MenuDefinition,
+        title: String,
         nodeValues: Map<String, Any?>,
         state: Map<String, Any?>,
         player: ServerPlayer,
     ): RenderedMenu {
         val out = HashMap<Int, ItemStack>()
         val scopeBase = Scope(
-            menu = mapOf("id" to def.id, "title" to def.title, "rows" to def.rows),
+            menu = mapOf("id" to def.id, "title" to title, "rows" to def.rows),
             player = mapOf("uuid" to player.uuid.toString(), "name" to player.scoreboardName),
             nodeValues = nodeValues,
             state = state,
@@ -63,20 +66,23 @@ class WidgetRenderer(
             when (w) {
                 is WidgetDef.Button -> {
                     val enabled =
-                        w.enabledIf?.let { engine.eval(it, scopeBase) != 0 && engine.eval(it, scopeBase) != false } ?: true
+                        w.enabledIf?.let { engine.eval(it, scopeBase) != 0 && engine.eval(it, scopeBase) != false }
+                            ?: true
                     val stack = renderIcon(w.icon, scopeBase)
                     val button = if (enabled) w.onClick?.let { act ->
                         MenuButton(
-                            MenuButton.Action.ACCEPT,
-                            data = mapOf("cmd" to act.run) + (act.args?.let { mapOf("args" to it.toString()) }
-                                ?: emptyMap()))
+                            cmd = act.run,
+                            args = act.args?.let { JsonTemplater.templatizeStringMap(it, engine, scopeBase) }
+                                ?: emptyMap())
                     } else null
                     out[w.slot] = if (button != null) stack.withButton(button) else stack
                 }
+
                 is WidgetDef.Label -> {
                     val stack = renderIcon(w.icon, scopeBase)
                     out[w.slot] = stack
                 }
+
                 is WidgetDef.ListWidget -> {
                     val listValue = nodeValues[w.items.from] as? List<*> ?: emptyList<Any?>()
                     val slots = w.layout.slots
@@ -87,12 +93,9 @@ class WidgetRenderer(
                         val stack = renderIcon(w.items.icon, scope)
                         val btn = w.items.onClick?.let { act ->
                             MenuButton(
-                                MenuButton.Action.ACCEPT,
-                                mapOf(
-                                    "cmd" to engine.renderTemplate(act.run, scope),
-                                    "args" to (act.args?.let { engine.renderTemplate(it.toString(), scope) } ?: "")
-                                )
-                            )
+                                cmd = engine.renderTemplate(act.run, scope),
+                                args = act.args?.let { JsonTemplater.templatizeStringMap(it, engine, scope) }
+                                    ?: emptyMap())
                         }
                         out[slots[i]] = if (btn != null) stack.withButton(btn) else stack
                     }

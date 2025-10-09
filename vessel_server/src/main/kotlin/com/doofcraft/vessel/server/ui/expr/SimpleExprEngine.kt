@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui.expr
 
+import kotlinx.datetime.Clock
 import kotlin.collections.get
 import kotlin.math.floor
 
@@ -7,7 +8,8 @@ class SimpleExprEngine : ExprEngine {
     override fun eval(expr: String, scope: Scope): Any? {
         val p = Parser(Tokenize(expr))
         val node = p.parseExpression()
-        return Eval.eval(node, scope)
+        val result = Eval.eval(node, scope)
+        return result
     }
 
     override fun renderTemplate(text: String, scope: Scope): String {
@@ -334,11 +336,9 @@ class SimpleExprEngine : ExprEngine {
         private fun resolveVar(path: List<String>, sc: Scope): Any? {
             val head = path.first()
             val (root, offset) = when (head) {
-                "q" -> {
-                    if (path.getOrNull(1) == "value") sc.value to 2 else null to 1
-                }
-
+                "@value" -> sc.value to 1
                 "@state" -> sc.state to 1
+                "@params" -> sc.params to 1
                 "@player" -> sc.player to 1
                 "@menu" -> sc.menu to 1
                 else -> {
@@ -366,11 +366,11 @@ class SimpleExprEngine : ExprEngine {
             "lookup" -> {
                 // lookup(nodeId, key, default)
                 val nodeId = args.getOrNull(0)?.toString() ?: return null
-                val key = args.getOrNull(1)?.toString()
+                val keyAny = args.getOrNull(1)
                 val default = args.getOrNull(2)
                 val node = sc.nodeValues[nodeId]
                 when (node) {
-                    is Map<*, *> -> if (key != null) node[key] ?: default else node
+                    is Map<*, *> -> if (keyAny == null) node else smartGet(node, keyAny) ?: default
                     is List<*> -> node
                     else -> default
                 }
@@ -389,6 +389,29 @@ class SimpleExprEngine : ExprEngine {
             "has" -> {
                 val nodeId = args.getOrNull(0)?.toString() ?: return false
                 sc.nodeValues.containsKey(nodeId)
+            }
+
+            "now" -> Clock.System.now().epochSeconds
+
+            "max" -> {
+                val a = num(args.getOrNull(0)).toLong();
+                val b = num(args.getOrNull(1)).toLong()
+                kotlin.math.max(a, b)
+            }
+
+            "fmax" -> {
+                val a = num(args.getOrNull(0))
+                val b = num(args.getOrNull(1))
+                kotlin.math.max(a, b)
+            }
+
+            "pluck" -> {
+                val list = args.getOrNull(0) as? List<*> ?: return emptyList<Any?>()
+                val path = args.getOrNull(1)?.toString() ?: return emptyList<Any?>()
+                list.map { row ->
+                    val m = row as? Map<*, *> ?: return@map null
+                    getByPath(m, path)
+                }
             }
 
             else -> null
@@ -436,10 +459,57 @@ class SimpleExprEngine : ExprEngine {
             is Boolean -> if (v) "true" else "false"
             else -> v.toString()
         }
+
+        private fun getByPath(root: Map<*, *>, path: String): Any? {
+            var cur: Any? = root
+            for (seg in path.split('.')) {
+                cur = when (cur) {
+                    is Map<*, *> -> cur[seg]
+                    is List<*> -> seg.toIntOrNull()?.let { idx -> cur.getOrNull(idx) }
+                    else -> return null
+                }
+            }
+            return cur
+        }
+
+        // Map[key] but with some attempted conversions if Map doesn't contain Key.
+        private fun smartGet(map: Map<*, *>, key: Any?): Any? {
+            if (map.containsKey(key)) return map[key]
+
+            if (key is Number) {
+                val kLong = key.toLong()
+                map[kLong]?.let { return it }
+                val kInt = kLong.toInt()
+                map[kInt]?.let { return it }
+                val kDouble = key.toDouble()
+                map[kDouble]?.let { return it }
+                map.entries.firstOrNull {
+                    it.key is Number && (it.key as Number).toLong() == kLong
+                }?.let { return it.value }
+            }
+
+            if (key is String) {
+                key.toLongOrNull()?.let { l ->
+                    map[l]?.let { return it }
+                    map[l.toInt()]?.let { return it }
+                }
+            }
+
+            val ks = key?.toString()
+            if (ks != null) {
+                map.entries.firstOrNull {
+                    it.key?.toString() == ks
+                }?.let { return it.value }
+            }
+
+            return null
+        }
     }
 
     private object Template {
-        private val blockRegex = Regex("""\{\?(.+?)\?(.+?):(.+?)}""")
+        // Ternary regex is complex to avoid capturing part of an Identifier ('abc:def') as the expression separator.
+        private val blockRegex =
+            Regex("""\{\?\s*(.*?)\s*\?\s*((?:'[^']*'|[^':{}])*?)\s*:\s*((?:'[^']*'|[^{}])*?)\s*}""")
         private val holeRegex = Regex("""\{([^{}]+)}""")
 
         fun render(input: String, engine: ExprEngine, scope: Scope): String {
@@ -451,8 +521,8 @@ class SimpleExprEngine : ExprEngine {
                 s = blockRegex.replace(s) { m ->
                     changed = true
                     val cond = m.groupValues[1].trim()
-                    val t = m.groupValues[2]
-                    val f = m.groupValues[3]
+                    val t = m.groupValues[2].trim('\'').trim()
+                    val f = m.groupValues[3].trim('\'').trim()
                     val ok = truthy(engine.eval(cond, scope))
                     // recursively render the chosen branch
                     render(if (ok) t else f, engine, scope)

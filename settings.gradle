@@ -12,7 +12,7 @@ pluginManagement {
 rootProject.name = "vessel"
 
 include(
-        "vessel_common",
-        "vessel_client",
-        "vessel_server"
+    "vessel_common",
+    "vessel_client",
+    "vessel_server"
 )

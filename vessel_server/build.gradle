@@ -1,10 +1,15 @@
 plugins {
-    id "fabric-loom"
-    id "org.jetbrains.kotlin.jvm"
-    id "org.jetbrains.kotlin.plugin.serialization"
+    id "fabric-loom" version "${loom_version}"
+    id "org.jetbrains.kotlin.jvm" version "2.2.0"
+    id "org.jetbrains.kotlin.plugin.serialization" version "2.2.0"
+    id "com.gradleup.shadow" version "8.3.6"
+    id "maven-publish"
+    id "java"
 }
 
-base.archivesName.set("${rootProject.name}_server")
+base.archivesName = "vessel_server"
+group = project.maven_group
+version = project.mod_version
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -17,7 +22,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    include(implementation(project(path: ":vessel_common", configuration: "namedElements")))
+    implementation(project(path: ":vessel_common", configuration: "namedElements"))
 
     implementation "net.kyori:adventure-api:${project.adventure_api_version}"
     transitiveInclude(implementation "de.themoep:minedown-adventure:${project.minedown_version}")
@@ -28,10 +33,61 @@ dependencies {
     }
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/vessel.accesswidener")
+}
+
+java {
+    withSourcesJar()
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("shadow")
+    dependencies {
+        include(project(":vessel_common"))
+        exclude("META-INF/*.SF")
+        exclude("META-INF/*.DSA")
+        exclude("META-INF/*.RSA")
+        exclude("**/*.html")
+        exclude("module-info.*")
+        exclude("Log4j-*")
+        exclude("mime.types")
+        exclude("VersionInfo.java")
+        exclude("**/*.tiny")
+    }
+}
+
+tasks.remapJar {
+    inputFile.set(tasks.shadowJar.archiveFile)
+    archiveClassifier.set("")
+}
+
 processResources {
     inputs.property "version", project.version
 
     filesMatching("fabric.mod.json") {
         expand "version": inputs.properties.version
+    }
+}
+
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifact(tasks.remapJar)
+            artifact(tasks.remapSourcesJar) { classifier = "sources" }
+
+            artifactId = "vessel_server"
+            groupId = group
+            version = version
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+        mavenLocal()
     }
 }

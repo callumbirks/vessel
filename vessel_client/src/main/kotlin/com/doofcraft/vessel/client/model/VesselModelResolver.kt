@@ -1,17 +1,21 @@
 package com.doofcraft.vessel.client.model
 
-import com.squareup.moshi.JsonReader
+import com.doofcraft.vessel.client.serialization.vesselSerializationModule
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelResolver
 import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.model.UnbakedModel
 import net.minecraft.resources.ResourceLocation
-import okio.buffer
-import okio.source
 
 @Environment(EnvType.CLIENT)
 object VesselModelResolver: ModelResolver {
+    private val json = Json { serializersModule = vesselSerializationModule }
+
+    @OptIn(ExperimentalSerializationApi::class)
     override fun resolveModel(context: ModelResolver.Context): UnbakedModel? {
         if (context.id().namespace != VesselMod.MODID) return null
         VesselMod.LOGGER.info("Resolving model {}", context.id())
@@ -27,9 +31,7 @@ object VesselModelResolver: ModelResolver {
         }
 
         res.open().use { stream ->
-            val source = stream.source().buffer()
-            val json = JsonReader.of(source)
-            return VesselUnbakedModel.Deserializer().fromJson(json)
+            return json.decodeFromStream<VesselUnbakedModel>(stream)
         }
     }
 }

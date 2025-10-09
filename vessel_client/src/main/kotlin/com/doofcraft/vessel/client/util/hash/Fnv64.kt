@@ -1,37 +1,49 @@
 package com.doofcraft.vessel.client.util.hash
 
-import com.google.gson.JsonElement
+import kotlinx.serialization.json.*
 import java.lang.Double
-import kotlin.text.iterator
+import kotlin.Boolean
+import kotlin.Long
+import kotlin.String
+import kotlin.code
+import kotlin.repeat
 
 class Fnv64 {
     private var h = -0x340d631b7bdddcdbL
     fun updateLong(x: Long) {
         var v = x; repeat(8) { h = (h xor (v and 0xff)).times(0x100000001b3L); v = v ushr 8 }
     }
+
     fun updateStr(s: String) {
-        for (ch in s) { h = (h xor (ch.code.toLong() and 0xff)).times(0x100000001b3L) }
+        for (ch in s) {
+            h = (h xor (ch.code.toLong() and 0xff)).times(0x100000001b3L)
+        }
     }
+
     fun updateBool(b: Boolean) = updateLong(if (b) 1L else 0L)
     fun updateJson(e: JsonElement?) {
-        when {
-            e == null -> updateLong(0)
-            e.isJsonNull -> updateLong(1)
-            e.isJsonPrimitive -> {
-                val p = e.asJsonPrimitive
+        when (e) {
+            null -> updateLong(0)
+            is JsonNull -> updateLong(1)
+            is JsonPrimitive -> {
                 when {
-                    p.isBoolean -> updateBool(p.asBoolean)
-                    p.isNumber -> updateLong(Double.doubleToRawLongBits(p.asDouble))
-                    else -> updateStr(p.asString)
+                    e.isString -> updateStr(e.toString())
+                    e.booleanOrNull != null -> updateBool(e.boolean)
+                    else -> updateLong(Double.doubleToRawLongBits(e.double))
                 }
             }
-            e.isJsonArray -> { updateLong(5); e.asJsonArray.forEach { updateJson(it) }}
+
+            is JsonArray -> {
+                updateLong(5); e.jsonArray.forEach { updateJson(it) }
+            }
+
             else -> {
                 updateLong(7)
-                val obj = e.asJsonObject
-                obj.keySet().toMutableList().sorted().forEach { k -> updateStr(k); updateJson(obj.get(k)) }
+                val obj = e.jsonObject
+                obj.keys.toMutableList().sorted().forEach { k -> updateStr(k); updateJson(obj[k]) }
             }
         }
     }
+
     fun value() = h
 }

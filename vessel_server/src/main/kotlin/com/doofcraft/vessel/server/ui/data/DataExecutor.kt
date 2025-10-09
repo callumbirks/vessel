@@ -10,6 +10,7 @@ import com.doofcraft.vessel.server.ui.model.DataNodeDef
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 class DataPlan(
     val def: MenuDefinition,
@@ -56,6 +57,7 @@ class DataExecutor(
             val cmd = CommandBus.get(node.cmd)
             val value = cmd.run(ctx, inputValue, resolvedArgs)
             results[nodeId] = value
+            ctx.state["__nodeValues__"] = results
             if (ttl > 0) cache.put(nodeKey(ctx, nodeId), value, ttl)
         }
         results
@@ -64,18 +66,20 @@ class DataExecutor(
     private fun nodeKey(ctx: UiContext, nodeId: String) = "${ctx.menuId}:${ctx.playerUuid}:$nodeId"
 
     private fun resolveArgs(
-        args: JsonElement?,
+        args: Map<String, JsonElement>?,
         plan: DataPlan,
         nodeValues: Map<String, Any?>,
         ctx: UiContext
-    ): Any? {
-        if (args == null) return null
+    ): Map<String, Any?> {
+        if (args == null) return emptyMap()
         val scope = Scope(
             menu = mapOf("id" to plan.def.id),
+            params = ctx.params,
             player = mapOf("uuid" to ctx.playerUuid),
             nodeValues = nodeValues,
             state = ctx.state
         )
-        return JsonTemplater.templatize(args, engine, scope)
+        val templatized = JsonTemplater.templatizeMapValues(args, engine, scope)
+        return templatized
     }
 }

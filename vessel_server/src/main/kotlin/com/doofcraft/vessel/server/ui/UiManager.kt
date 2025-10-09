@@ -1,19 +1,23 @@
 package com.doofcraft.vessel.server.ui
 
+import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.commands.MapList
 import com.doofcraft.vessel.server.ui.cmd.commands.Take
+import com.doofcraft.vessel.server.ui.cmd.commands.UiClose
+import com.doofcraft.vessel.server.ui.cmd.commands.UiNavigate
 import com.doofcraft.vessel.server.ui.data.DataExecutor
 import com.doofcraft.vessel.server.ui.expr.SimpleExprEngine
 import com.doofcraft.vessel.server.ui.render.WidgetRenderer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import net.minecraft.server.level.ServerPlayer
 
 object UiManager {
     lateinit var service: MenuService
 
-    private val BUILTIN_COMMANDS = listOf(Take, MapList)
+    private val BUILTIN_COMMANDS = listOf(Take, MapList, UiNavigate, UiClose)
 
     fun register(scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)) {
         BUILTIN_COMMANDS.forEach(CommandBus::register)
@@ -21,5 +25,13 @@ object UiManager {
         service = MenuService(
             engine = engine, renderer = WidgetRenderer(engine), executor = DataExecutor(engine), scope
         )
+        VesselEvents.CONTAINER_MENU_CLOSED.subscribe { event ->
+            service.closeMenu(event.player)
+        }
+    }
+
+    fun open(menu: String, player: ServerPlayer, params: Map<String, Any?>) {
+        val menu = MenuRegistry.getOrThrow(menu)
+        service.openMenu(player, menu, params)
     }
 }

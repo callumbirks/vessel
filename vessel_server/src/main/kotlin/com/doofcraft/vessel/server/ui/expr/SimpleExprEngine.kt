@@ -17,7 +17,7 @@ class SimpleExprEngine : ExprEngine {
     }
 
     private enum class T {
-        EOF, ID, NUM, STR, TRUE, FALSE, NULL, LPAR, RPAR, QMARK, COLON, COMMA, PLUS, MINUS, STAR, SLASH, PERCENT, BANG, EQ, EQEQ, NEQ, LT, LTE, GT, GTE, ANDAND, OROR, DOT
+        EOF, ID, NUM, STR, TRUE, FALSE, NULL, LPAR, RPAR, QMARK, ELVIS, COLON, COMMA, PLUS, MINUS, STAR, SLASH, PERCENT, BANG, EQ, EQEQ, NEQ, LT, LTE, GT, GTE, ANDAND, OROR, DOT
     }
 
     private data class Tok(val t: T, val s: String, val pos: Int)
@@ -87,7 +87,7 @@ class SimpleExprEngine : ExprEngine {
             return when (c) {
                 '(' -> one(T.LPAR)
                 ')' -> one(T.RPAR)
-                '?' -> one(T.QMARK)
+                '?' -> if (peek('?')) two('?', T.ELVIS) else one(T.QMARK)
                 ':' -> one(T.COLON)
                 ',' -> one(T.COMMA)
                 '.' -> one(T.DOT)
@@ -184,8 +184,18 @@ class SimpleExprEngine : ExprEngine {
         }
 
         private fun parseMul(): Node {
-            var e = parseUnary()
+            var e = parseElvis()
             while (la.t == T.STAR || la.t == T.SLASH || la.t == T.PERCENT) {
+                val op = la.t
+                eat(op)
+                e = Node.Bin(op, e, parseUnary())
+            }
+            return e
+        }
+
+        private fun parseElvis(): Node {
+            var e = parseUnary()
+            while (la.t == T.ELVIS) {
                 val op = la.t
                 eat(op)
                 e = Node.Bin(op, e, parseUnary())
@@ -326,6 +336,7 @@ class SimpleExprEngine : ExprEngine {
                     T.GTE -> num(a) >= num(eval(n.b, sc))
                     T.ANDAND -> if (truthy(a)) eval(n.b, sc) else a
                     T.OROR -> if (truthy(a)) a else eval(n.b, sc)
+                    T.ELVIS -> a ?: eval(n.b, sc)
                     else -> error("bad bin")
                 }
             }

@@ -27,3 +27,11 @@ object UiClose : UiCommand {
         return "ok"
     }
 }
+
+object UiSetState : UiCommand {
+    override val id: String = "ui.set_state"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        for ((k, v) in args) if (v != null) ctx.state[k] = v else ctx.state.remove(k)
+        return ctx.state
+    }
+}

@@ -3,7 +3,6 @@ package com.doofcraft.vessel.server.ui.render
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.registry.ModComponents
-import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
@@ -37,18 +36,19 @@ class WidgetRenderer(
             state = state,
         )
 
-        fun renderIcon(icon: IconDef, scope: Scope): ItemStack {
-            val itemId = engine.renderTemplate(icon.item, scope)
+        fun renderIcon(icon: IconDef, scope: Scope, player: ServerPlayer): ItemStack {
+            val itemIdStr = engine.renderTemplate(icon.item, scope)
+            val itemId = VesselIdentifier.parse(itemIdStr)
 
             val name = icon.name?.let { engine.renderTemplate(it, scope) }
             val lore = icon.lore?.map { engine.renderTemplate(it, scope) } ?: emptyList()
 
-            val builder = ItemBuilder.of(VesselIdentifier.parse(itemId)).withName(name).withLore(lore)
+            val builder = ItemBuilder.of(itemId).withName(name).withLore(lore)
 
             val nameRepl = icon.replacements?.name ?: emptyMap()
             val loreRepl = icon.replacements?.lore ?: emptyMap()
 
-            val result: ItemStack = builder.build(nameReplacements = {
+            val stack: ItemStack = builder.build(nameReplacements = {
                 nameRepl.forEach { (placeholder, spec) ->
                     val comp = ComponentFactory.build(spec, engine, scope)
                     replace(placeholder, comp)
@@ -59,7 +59,13 @@ class WidgetRenderer(
                     replace(placeholder, comp)
                 }
             })
-            return result
+
+            for (m in UiComponentMappers.all()) {
+                if (!m.shouldApply(itemId, stack, scope, player)) continue
+                m.apply(itemId, stack, scope, player)
+            }
+
+            return stack
         }
 
         def.widgets.forEach { w ->
@@ -68,7 +74,7 @@ class WidgetRenderer(
                     val enabled =
                         w.enabledIf?.let { engine.eval(it, scopeBase) != 0 && engine.eval(it, scopeBase) != false }
                             ?: true
-                    val stack = renderIcon(w.icon, scopeBase)
+                    val stack = renderIcon(w.icon, scopeBase, player)
                     val button = if (enabled) w.onClick?.let { act ->
                         MenuButton(
                             cmd = act.run,
@@ -79,7 +85,7 @@ class WidgetRenderer(
                 }
 
                 is WidgetDef.Label -> {
-                    val stack = renderIcon(w.icon, scopeBase)
+                    val stack = renderIcon(w.icon, scopeBase, player)
                     out[w.slot] = stack
                 }
 
@@ -90,7 +96,7 @@ class WidgetRenderer(
                         if (i >= slots.size) break
                         val valueMap = raw
                         val scope = scopeBase.copy(value = valueMap)
-                        val stack = renderIcon(w.items.icon, scope)
+                        val stack = renderIcon(w.items.icon, scope, player)
                         val btn = w.items.onClick?.let { act ->
                             MenuButton(
                                 cmd = engine.renderTemplate(act.run, scope),

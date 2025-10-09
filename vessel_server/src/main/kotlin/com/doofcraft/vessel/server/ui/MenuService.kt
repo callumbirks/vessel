@@ -45,7 +45,9 @@ class MenuService(
 
     fun openMenu(player: ServerPlayer, def: MenuDefinition, params: Map<String, Any?>) {
         def.openParams?.let { req ->
-            require(params.keys.containsAll(req.keys)) { "Missing open params" }
+            // Check all non-optional (optional meaning 'int?' or similar) params are present.
+            val nonOptional = req.filterNot { (_, type) -> type.endsWith('?') }
+            require(params.keys.containsAll(nonOptional.keys)) { "Missing open params" }
         }
         val plan = DataPlanner.compile(def)
         val ctx = UiContext(player.uuid.toString(), def.id, params, ConcurrentHashMap())

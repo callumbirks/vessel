@@ -5,6 +5,7 @@ import com.doofcraft.vessel.server.ui.cmd.UiCommand
 import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.Scope
+import com.doofcraft.vessel.server.ui.expr.SimpleExprEngine
 
 object UtilTake : UiCommand {
     override val id: String = "util.take"
@@ -77,5 +78,22 @@ object UtilEntries : UiCommand {
         val keyName = (args["keysAs"]?.toString() ?: "key")
         val valName = (args["valuesAs"]?.toString() ?: "value")
         return map.entries.map { e -> mapOf(keyName to e.key, valName to e.value) }
+    }
+}
+
+object UtilLookup : UiCommand {
+    override val id: String = "util.lookup"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        val keyAny = args["key"] ?: return null
+        val default = args["default"]
+        return when (input) {
+            is Map<*, *> -> SimpleExprEngine.Util.smartGet(input, keyAny) ?: default
+            is List<*> -> {
+                val intKey = keyAny as? Int ?: keyAny.toString().toIntOrNull()
+                if (intKey != null) input[intKey] ?: default
+                else default
+            }
+            else -> default
+        }
     }
 }

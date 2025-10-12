@@ -379,7 +379,7 @@ class SimpleExprEngine : ExprEngine {
                 val keyAny = args.getOrNull(1)
                 val default = args.getOrNull(2)
                 when (node) {
-                    is Map<*, *> -> if (keyAny == null) node else smartGet(node, keyAny) ?: default
+                    is Map<*, *> -> if (keyAny == null) node else Util.smartGet(node, keyAny) ?: default
                     is List<*> -> {
                         val intKey = keyAny as? Int ?: keyAny?.toString()?.toIntOrNull()
                         if (intKey != null) node[intKey] ?: default
@@ -485,38 +485,6 @@ class SimpleExprEngine : ExprEngine {
             return cur
         }
 
-        // Map[key] but with some attempted conversions if Map doesn't contain Key.
-        private fun smartGet(map: Map<*, *>, key: Any?): Any? {
-            if (map.containsKey(key)) return map[key]
-
-            if (key is Number) {
-                val kLong = key.toLong()
-                map[kLong]?.let { return it }
-                val kInt = kLong.toInt()
-                map[kInt]?.let { return it }
-                val kDouble = key.toDouble()
-                map[kDouble]?.let { return it }
-                map.entries.firstOrNull {
-                    it.key is Number && (it.key as Number).toLong() == kLong
-                }?.let { return it.value }
-            }
-
-            if (key is String) {
-                key.toLongOrNull()?.let { l ->
-                    map[l]?.let { return it }
-                    map[l.toInt()]?.let { return it }
-                }
-            }
-
-            val ks = key?.toString()
-            if (ks != null) {
-                map.entries.firstOrNull {
-                    it.key?.toString() == ks
-                }?.let { return it.value }
-            }
-
-            return null
-        }
     }
 
     private object Template {
@@ -563,6 +531,41 @@ class SimpleExprEngine : ExprEngine {
             is Collection<*> -> v.isNotEmpty()
             is Map<*, *> -> v.isNotEmpty()
             else -> true
+        }
+    }
+
+    object Util {
+        // Map[key] but with some attempted conversions if Map doesn't contain Key.
+        fun smartGet(map: Map<*, *>, key: Any?): Any? {
+            if (map.containsKey(key)) return map[key]
+
+            if (key is Number) {
+                val kLong = key.toLong()
+                map[kLong]?.let { return it }
+                val kInt = kLong.toInt()
+                map[kInt]?.let { return it }
+                val kDouble = key.toDouble()
+                map[kDouble]?.let { return it }
+                map.entries.firstOrNull {
+                    it.key is Number && (it.key as Number).toLong() == kLong
+                }?.let { return it.value }
+            }
+
+            if (key is String) {
+                key.toLongOrNull()?.let { l ->
+                    map[l]?.let { return it }
+                    map[l.toInt()]?.let { return it }
+                }
+            }
+
+            val ks = key?.toString()
+            if (ks != null) {
+                map.entries.firstOrNull {
+                    it.key?.toString() == ks
+                }?.let { return it.value }
+            }
+
+            return null
         }
     }
 }

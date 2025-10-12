@@ -28,8 +28,11 @@ object UiManager {
         service = MenuService(
             engine = engine, renderer = WidgetRenderer(engine), executor = DataExecutor(engine), scope
         )
+        VesselEvents.CONTAINER_MENU_OPENED.subscribe { event ->
+            service.onMenuOpened(event.player, event.containerId)
+        }
         VesselEvents.CONTAINER_MENU_CLOSED.subscribe { event ->
-            service.closeMenu(event.player)
+            service.closeMenu(event.player, event.containerId)
         }
     }
 

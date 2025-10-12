@@ -2,6 +2,7 @@ package com.doofcraft.vessel.server.ui.handler
 
 import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuClosedEvent
+import com.doofcraft.vessel.server.api.events.ui.ContainerMenuOpenedEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
@@ -43,7 +44,12 @@ class InventoryMenuContainer(val name: String, rows: Int, private val items: Mut
             override fun shouldCloseCurrentScreen(): Boolean = true
         }
         syncId = player.openMenu(factory).orElse(-1)
-        return syncId != -1
+        return if (syncId != -1) {
+            VesselEvents.CONTAINER_MENU_OPENED.emit(ContainerMenuOpenedEvent(player, syncId))
+            true
+        } else {
+            false
+        }
     }
 
     override fun getContainerSize() = this.size

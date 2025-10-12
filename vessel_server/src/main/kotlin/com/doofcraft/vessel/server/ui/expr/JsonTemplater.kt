@@ -32,7 +32,8 @@ object JsonTemplater {
 
     fun templatizeStringMap(map: Map<String, String>, engine: ExprEngine, scope: Scope): Map<String, String> {
         // TODO: Support 'templatizeString()' by making MenuButton args support more than String values, maybe via JSON?
-        return map.mapKeys { (k, _) -> engine.renderTemplate(k, scope) }
+        val result = map.mapKeys { (k, _) -> engine.renderTemplate(k, scope) }
             .mapValues { (_, v) -> engine.renderTemplate(v, scope) }
+        return result
     }
 }

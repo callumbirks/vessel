@@ -10,10 +10,9 @@ object UiNavigate : UiCommand {
     override val id: String = "ui.navigate"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         val target = args["target"].toString()
-        val menuArgs = args["args"] as? Map<String, *> ?: emptyMap<String, Any?>()
         val player = VesselServer.server.playerList.getPlayer(UUID.fromString(ctx.playerUuid))
             ?: return null
-        UiManager.open(target, player, menuArgs)
+        UiManager.open(target, player, args)
         return "ok"
     }
 }

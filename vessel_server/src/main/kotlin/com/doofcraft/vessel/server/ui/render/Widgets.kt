@@ -3,6 +3,7 @@ package com.doofcraft.vessel.server.ui.render
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
@@ -24,19 +25,20 @@ class WidgetRenderer(
     fun renderAll(
         def: MenuDefinition,
         title: String,
-        nodeValues: Map<String, Any?>,
-        state: Map<String, Any?>,
+        ctx: UiContext,
         player: ServerPlayer,
     ): RenderedMenu {
         val out = HashMap<Int, ItemStack>()
         val scopeBase = Scope(
             menu = mapOf("id" to def.id, "title" to title, "rows" to def.rows),
+            params = ctx.params,
             player = mapOf("uuid" to player.uuid.toString(), "name" to player.scoreboardName),
-            nodeValues = nodeValues,
-            state = state,
+            nodeValues = ctx.nodeValues,
+            state = ctx.state,
         )
 
         fun renderIcon(icon: IconDef, scope: Scope, player: ServerPlayer): ItemStack {
+            VesselMod.LOGGER.info("Rendering icon $icon, scope = $scope")
             val itemIdStr = engine.renderTemplate(icon.item, scope)
             val itemId = VesselIdentifier.parse(itemIdStr)
 
@@ -90,7 +92,7 @@ class WidgetRenderer(
                 }
 
                 is WidgetDef.ListWidget -> {
-                    val listValue = nodeValues[w.items.from] as? List<*> ?: emptyList<Any?>()
+                    val listValue = ctx.nodeValues[w.items.from] as? List<*> ?: emptyList<Any?>()
                     val slots = w.layout.slots
                     for ((i, raw) in listValue.withIndex()) {
                         if (i >= slots.size) break

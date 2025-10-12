@@ -5,14 +5,12 @@ import com.doofcraft.vessel.server.ui.cmd.NodeCache
 import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.JsonTemplater
-import com.doofcraft.vessel.server.ui.expr.Scope
 import com.doofcraft.vessel.server.ui.model.DataNodeDef
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
 
-class DataPlan(
+data class DataPlan(
     val def: MenuDefinition,
     val order: List<String>,
     val nodes: Map<String, DataNodeDef>
@@ -41,45 +39,44 @@ class DataExecutor(
         plan: DataPlan,
         ctx: UiContext,
         cache: NodeCache,
-        existingValues: Map<String, Any?> = emptyMap()
-    ): Map<String, Any?> = coroutineScope {
-        val results = existingValues.toMutableMap()
+    ) = coroutineScope {
         for (nodeId in plan.order) {
             val node = plan.nodes.getValue(nodeId)
             val ttl = node.cache?.ttl ?: 0L
             val cached = if (ttl > 0) cache.get(nodeKey(ctx, nodeId)) else null
             if (cached != null) {
-                results[nodeId] = cached
+                ctx.nodeValues[nodeId] = cached
                 continue
             }
-            val inputValue = node.input?.let { results[it] }
-            val resolvedArgs = resolveArgs(node.args, plan, results, ctx)
+            val inputValue = resolveInput(node.input, ctx)
+            val resolvedArgs = resolveArgs(node.args, ctx)
             val cmd = CommandBus.get(node.cmd)
+
             val value = cmd.run(ctx, inputValue, resolvedArgs)
-            results[nodeId] = value
-            ctx.state["__nodeValues__"] = results
+
+            if (value != null) ctx.nodeValues[nodeId] = value
+            else ctx.nodeValues.remove(nodeId)
+
             if (ttl > 0) cache.put(nodeKey(ctx, nodeId), value, ttl)
         }
-        results
     }
 
     private fun nodeKey(ctx: UiContext, nodeId: String) = "${ctx.menuId}:${ctx.playerUuid}:$nodeId"
 
+    private fun resolveInput(
+        input: String?,
+        ctx: UiContext
+    ): Any? {
+        if (input == null) return null
+        return JsonTemplater.templatizeString(input, engine, ctx.toScope())
+    }
+
     private fun resolveArgs(
         args: Map<String, JsonElement>?,
-        plan: DataPlan,
-        nodeValues: Map<String, Any?>,
         ctx: UiContext
     ): Map<String, Any?> {
         if (args == null) return emptyMap()
-        val scope = Scope(
-            menu = mapOf("id" to plan.def.id),
-            params = ctx.params,
-            player = mapOf("uuid" to ctx.playerUuid),
-            nodeValues = nodeValues,
-            state = ctx.state
-        )
-        val templatized = JsonTemplater.templatizeMapValues(args, engine, scope)
+        val templatized = JsonTemplater.templatizeMapValues(args, engine, ctx.toScope())
         return templatized
     }
 }

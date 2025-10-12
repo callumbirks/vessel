@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui.cmd
 
+import com.doofcraft.vessel.server.ui.expr.Scope
 import java.util.concurrent.ConcurrentHashMap
 
 interface UiCommand {
@@ -13,9 +14,18 @@ data class UiContext(
     val playerUuid: String,
     val menuId: String,
     val params: Map<String, Any?>,
+    val nodeValues: MutableMap<String, Any>,
     /** mutable local state per open menu (pagination, filters, etc.) */
-    val state: MutableMap<String, Any> = ConcurrentHashMap()
-)
+    val state: MutableMap<String, Any>
+) {
+    fun toScope() = Scope(
+        menu = mapOf("id" to menuId),
+        params = params,
+        player = mapOf("uuid" to playerUuid),
+        nodeValues = nodeValues,
+        state = state
+    )
+}
 
 object CommandBus {
     private val commands = ConcurrentHashMap<String, UiCommand>()

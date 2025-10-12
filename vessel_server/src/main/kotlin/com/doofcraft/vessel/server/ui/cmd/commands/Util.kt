@@ -20,17 +20,17 @@ object UtilMapList : UiCommand {
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         val list = (input as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
         val fields = args["fields"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
-        // For brevity, pass through the input; in production, evaluate expressions per field using an ExprEngine.
-        // Here you would call engine.eval for each field entry with scope.value = current row.
+
         val engine = UiManager.service.engine
 
         return list.map { row ->
             val scope = Scope(
-                menu = emptyMap(),
+                menu = mapOf("id" to ctx.menuId),
+                params = ctx.params,
                 player = mapOf("uuid" to ctx.playerUuid),
-                nodeValues = ctx.state["__nodeValues__"] as? Map<String, Any?> ?: emptyMap(),
-                value = row,
-                state = ctx.state
+                nodeValues = ctx.nodeValues,
+                state = ctx.state,
+                value = row
             )
             buildRow(fields, scope, engine)
         }
@@ -58,7 +58,7 @@ object UtilMapList : UiCommand {
 object UtilPage : UiCommand {
     override val id: String = "util.page"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
-        val list = (args["list"] as? List<*>) ?: emptyList<Any?>()
+        val list = input as? List<*> ?: emptyList<Any?>()
         val page = (args["page"] as? Number)?.toInt() ?: 0
         val size = (args["size"] as? Number)?.toInt() ?: 9
         val from = (page * size).coerceAtLeast(0)
@@ -73,7 +73,7 @@ object UtilPage : UiCommand {
 object UtilEntries : UiCommand {
     override val id: String = "util.entries"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
-        val map = args["map"] as? Map<*, *> ?: return emptyList<Map<String, Any?>>()
+        val map = input as? Map<*, *> ?: return emptyList<Map<String, Any?>>()
         val keyName = (args["keysAs"]?.toString() ?: "key")
         val valName = (args["valuesAs"]?.toString() ?: "value")
         return map.entries.map { e -> mapOf(keyName to e.key, valName to e.value) }

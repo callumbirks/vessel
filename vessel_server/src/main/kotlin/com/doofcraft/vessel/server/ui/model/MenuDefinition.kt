@@ -22,6 +22,10 @@ class MenuDefinition(
     data class Refresh(
         @SerialName("interval_ms") val intervalMs: Long, val nodes: List<String> = emptyList()
     )
+
+    override fun toString(): String {
+        return "{ id: $id, title: $title, rows: $rows, openParams: $openParams, refresh: $refresh, data: $data, widgets: $widgets }"
+    }
 }
 
 @Serializable
@@ -70,33 +74,42 @@ sealed class WidgetDef {
 
 @Serializable
 data class IconDef(
-    val item: String, val name: String? = null, val lore: List<String>? = null, val replacements: IconReplacements? = null
+    val item: String,
+    val name: String? = null,
+    val lore: List<String>? = null,
+    val replacements: IconReplacements? = null
 )
 
 @Serializable
 data class IconReplacements(
-    val name: Map<String, ComponentSpec> = emptyMap(),
-    val lore: Map<String, ComponentSpec> = emptyMap()
+    val name: Map<String, ComponentSpec> = emptyMap(), val lore: Map<String, ComponentSpec> = emptyMap()
 )
 
 @Serializable
 sealed class ComponentSpec {
-    @Serializable @SerialName("literal")
+    @Serializable
+    @SerialName("literal")
     data class Literal(val text: String) : ComponentSpec()
 
-    @Serializable @SerialName("translatable")
+    @Serializable
+    @SerialName("translatable")
     data class Translatable(
-        val key: String,
-        val args: List<Arg> = emptyList()
+        val key: String, val args: List<Arg> = emptyList()
     ) : ComponentSpec() {
         @Serializable
         sealed class Arg {
-            @Serializable @SerialName("literal") data class Literal(val text: String) : Arg()
-            @Serializable @SerialName("from_node") data class FromNode(val path: String) : Arg()
+            @Serializable
+            @SerialName("literal")
+            data class Literal(val text: String) : Arg()
+
+            @Serializable
+            @SerialName("from_node")
+            data class FromNode(val path: String) : Arg()
         }
     }
 
-    @Serializable @SerialName("from_node")
+    @Serializable
+    @SerialName("from_node")
     data class FromNode(val path: String) : ComponentSpec()
 }
 

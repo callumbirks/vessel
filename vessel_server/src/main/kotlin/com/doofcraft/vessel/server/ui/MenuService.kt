@@ -17,9 +17,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.minecraft.server.level.ServerPlayer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
@@ -39,9 +42,12 @@ class MenuService(
         val ctx: UiContext,
         val cache: NodeCache,
         val job: Job,
+        var syncId: Int = -1,
     )
 
     private val open = ConcurrentHashMap<String, OpenMenu>() // playerUuid -> OpenMenu
+    private val locks = ConcurrentHashMap<String, Mutex>()
+    private fun lockFor(playerUuid: String) = locks.computeIfAbsent(playerUuid) { Mutex() }
 
     fun openMenu(player: ServerPlayer, def: MenuDefinition, params: Map<String, Any?>) {
         def.openParams?.let { req ->
@@ -50,28 +56,50 @@ class MenuService(
             require(params.keys.containsAll(nonOptional.keys)) { "Missing open params" }
         }
         val plan = DataPlanner.compile(def)
-        val ctx = UiContext(player.uuid.toString(), def.id, params, ConcurrentHashMap())
+        val ctx = UiContext(player.uuid.toString(), def.id, params, ConcurrentHashMap(), ConcurrentHashMap())
         val cache = NodeCache()
         val playerUuid = player.uuid.toString()
 
-        val job = scope.launch {
-            refreshOnce(player, plan, ctx, cache)
+        scope.launch {
+            val mtx = lockFor(playerUuid)
+            mtx.withLock {
+                open.remove(playerUuid)?.job?.cancelAndJoin()
 
-            // Periodic refresh
-            val interval = def.refresh?.intervalMs ?: 0L
-            if (interval > 0) {
-                while (isActive) {
-                    delay(interval)
-                    refreshOnce(player, plan, ctx, cache, nodes = def.refresh!!.nodes)
+                val job = scope.launch {
+                    refreshOnce(player, plan, ctx, cache)
+                    val interval = def.refresh?.intervalMs ?: 0L
+                    if (interval > 0) {
+                        while (isActive) {
+                            delay(interval)
+                            refreshOnce(player, plan, ctx, cache, nodes = def.refresh!!.nodes)
+                        }
+                    }
+                }
+
+                open[playerUuid] = OpenMenu(def, plan, ctx, cache, job)
+            }
+        }
+    }
+
+    internal fun onMenuOpened(player: ServerPlayer, syncId: Int) {
+        scope.launch {
+            lockFor(player.stringUUID).withLock {
+                open[player.stringUUID]?.syncId = syncId
+            }
+        }
+    }
+
+    fun closeMenu(player: ServerPlayer, withSyncId: Int? = null) {
+        scope.launch {
+            lockFor(player.stringUUID).withLock {
+                val menu = open[player.stringUUID]
+                    ?: return@launch
+                if (withSyncId == null || withSyncId == menu.syncId) {
+                    open.remove(player.stringUUID)
+                    menu.job.cancelAndJoin()
                 }
             }
         }
-        open[playerUuid]?.job?.cancel()
-        open[playerUuid] = OpenMenu(def, plan, ctx, cache, job)
-    }
-
-    fun closeMenu(player: ServerPlayer) {
-        open.remove(player.uuid.toString())?.job?.cancel()
     }
 
     fun clickButton(player: ServerPlayer, menuButton: MenuButton) {
@@ -90,17 +118,12 @@ class MenuService(
     private suspend fun refreshOnce(
         player: ServerPlayer, plan: DataPlan, ctx: UiContext, cache: NodeCache, nodes: List<String>? = null
     ) {
+        VesselMod.LOGGER.info("Refreshing menu with plan = $plan, ctx = $ctx")
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
-        val values = executor.executeAll(plan, ctx, cache)
-        val scope = Scope(
-            menu = mapOf("id" to plan.def.id),
-            params = ctx.params,
-            player = mapOf("uuid" to ctx.playerUuid),
-            nodeValues = values,
-            state = ctx.state
-        )
+        executor.executeAll(plan, ctx, cache)
+        val scope = ctx.toScope()
         val renderedTitle = engine.renderTemplate(plan.def.title, scope)
-        val rendered = renderer.renderAll(plan.def, renderedTitle, values, ctx.state, player)
+        val rendered = renderer.renderAll(plan.def, renderedTitle, ctx, player)
 
         val openMenu =
             (player.containerMenu as? GenericInventoryScreenHandler)?.container as? InventoryMenuContainer ?: run {

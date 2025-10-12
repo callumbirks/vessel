@@ -2,6 +2,7 @@ package com.doofcraft.vessel.server.api.events
 
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuClosedEvent
+import com.doofcraft.vessel.server.api.events.ui.ContainerMenuOpenedEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityLoadEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityUnloadEvent
 import com.doofcraft.vessel.server.api.reactive.SimpleObservable
@@ -23,6 +24,9 @@ object VesselEvents {
 
     @JvmField
     val DATA_SYNCHRONIZED = SimpleObservable<ServerPlayer>()
+
+    @JvmField
+    val CONTAINER_MENU_OPENED = SimpleObservable<ContainerMenuOpenedEvent>()
 
     @JvmField
     val CONTAINER_MENU_CLOSED = SimpleObservable<ContainerMenuClosedEvent>()

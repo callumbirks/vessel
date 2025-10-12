@@ -31,7 +31,7 @@ object UtilMapList : UiCommand {
                 player = mapOf("uuid" to ctx.playerUuid),
                 nodeValues = ctx.nodeValues,
                 state = ctx.state,
-                value = row + ("index" to i)
+                value = row
             )
             buildRow(fields, scope, engine)
         }

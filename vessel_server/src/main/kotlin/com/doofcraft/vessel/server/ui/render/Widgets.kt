@@ -14,7 +14,6 @@ import com.doofcraft.vessel.server.ui.text.ComponentFactory
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 
-
 data class RenderedMenu(
     val items: Map<Int, ItemStack>
 )
@@ -38,7 +37,6 @@ class WidgetRenderer(
         )
 
         fun renderIcon(icon: IconDef, scope: Scope, player: ServerPlayer): ItemStack {
-            VesselMod.LOGGER.info("Rendering icon $icon, scope = $scope")
             val itemIdStr = engine.renderTemplate(icon.item, scope)
             val itemId = VesselIdentifier.parse(itemIdStr)
 

@@ -118,7 +118,6 @@ class MenuService(
     private suspend fun refreshOnce(
         player: ServerPlayer, plan: DataPlan, ctx: UiContext, cache: NodeCache, nodes: List<String>? = null
     ) {
-        VesselMod.LOGGER.info("Refreshing menu with plan = $plan, ctx = $ctx")
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
         executor.executeAll(plan, ctx, cache)
         val scope = ctx.toScope()

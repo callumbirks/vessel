@@ -24,7 +24,10 @@ object DataPlanner {
         val out = ArrayList<String>()
         fun dfs(n: String) {
             if (!visited.add(n)) return
-            nodes[n]?.input?.let { upstream -> if (nodes.containsKey(upstream)) dfs(upstream) }
+            nodes[n]?.input?.let { upstream ->
+                val head = upstream.split('.').firstOrNull() ?: return@let
+                if (nodes.containsKey(head)) dfs(head)
+            }
             out.add(n)
         }
         nodes.keys.forEach(::dfs)
@@ -68,7 +71,24 @@ class DataExecutor(
         ctx: UiContext
     ): Any? {
         if (input == null) return null
-        return JsonTemplater.templatizeString(input, engine, ctx.toScope())
+        val path = input.split('.')
+        val head = path.firstOrNull() ?: return null
+        val root = ctx.nodeValues[head] ?: return null
+        var cur: Any? = root
+        var i = 1
+        while (i < path.size) {
+            cur = when (cur) {
+                is Map<*, *> -> cur[path[i]]
+                is List<*> -> {
+                    val idx = path[i].toIntOrNull() ?: return null
+                    cur.getOrNull(idx)
+                }
+
+                else -> return null
+            }
+            i++
+        }
+        return cur
     }
 
     private fun resolveArgs(

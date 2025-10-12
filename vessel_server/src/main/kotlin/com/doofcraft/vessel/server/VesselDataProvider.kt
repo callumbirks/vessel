@@ -39,10 +39,6 @@ object VesselDataProvider : DataProvider {
     }
 
     override fun <T : DataRegistry> register(registry: T, reloadable: Boolean): T {
-        // Only send message once
-        if (this.registries.isEmpty()) {
-            LOGGER.info("Note: Vessel data registries are only loaded once per server instance as Pokémon species are not safe to reload.")
-        }
         this.registries.add(registry)
         if (reloadable) {
             this.reloadableRegistries.add(registry)

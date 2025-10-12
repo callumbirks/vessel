@@ -352,9 +352,8 @@ class SimpleExprEngine : ExprEngine {
                 "@params" -> sc.params to 1
                 "@player" -> sc.player to 1
                 "@menu" -> sc.menu to 1
-                else -> {
-                    sc.nodeValues[head] to 1
-                }
+                "@data" -> sc.nodeValues to 1
+                else -> emptyMap<String, Any?>() to 0
             }
             var cur: Any? = root
             var i = offset
@@ -376,13 +375,16 @@ class SimpleExprEngine : ExprEngine {
         private fun call(fn: String, args: List<Any?>, sc: Scope): Any? = when (fn) {
             "lookup" -> {
                 // lookup(nodeId, key, default)
-                val nodeId = args.getOrNull(0)?.toString() ?: return null
+                val node = args.getOrNull(0) ?: return null
                 val keyAny = args.getOrNull(1)
                 val default = args.getOrNull(2)
-                val node = sc.nodeValues[nodeId]
                 when (node) {
                     is Map<*, *> -> if (keyAny == null) node else smartGet(node, keyAny) ?: default
-                    is List<*> -> node
+                    is List<*> -> {
+                        val intKey = keyAny as? Int ?: keyAny?.toString()?.toIntOrNull()
+                        if (intKey != null) node[intKey] ?: default
+                        else default
+                    }
                     else -> default
                 }
             }

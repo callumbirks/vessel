@@ -46,6 +46,7 @@ sealed class WidgetDef {
         override val type: String = "button",
         val slot: Int,
         val icon: IconDef,
+        @SerialName("hide_if") val hideIf: String? = null,
         @SerialName("enabled_if") val enabledIf: String? = null,
         @SerialName("on_click") val onClick: ActionDef? = null
     ) : WidgetDef()
@@ -53,13 +54,19 @@ sealed class WidgetDef {
     @Serializable
     @SerialName("label")
     data class Label(
-        override val type: String = "label", val slot: Int, val icon: IconDef
+        override val type: String = "label",
+        val slot: Int,
+        val icon: IconDef,
+        @SerialName("hide_if") val hideIf: String? = null,
     ) : WidgetDef()
 
     @Serializable
     @SerialName("list")
     data class ListWidget(
-        override val type: String = "list", val layout: Layout, val items: Items
+        override val type: String = "list",
+        val layout: Layout,
+        val items: Items,
+        @SerialName("hide_if") val hideIf: String? = null,
     ) : WidgetDef() {
         @Serializable
         data class Layout(val slots: List<Int>)

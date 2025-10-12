@@ -25,6 +25,15 @@ data class UiContext(
         nodeValues = nodeValues,
         state = state
     )
+
+    fun toScope(value: Any?) = Scope(
+        menu = mapOf("id" to menuId),
+        params = params,
+        player = mapOf("uuid" to playerUuid),
+        nodeValues = nodeValues,
+        state = state,
+        value = value
+    )
 }
 
 object CommandBus {

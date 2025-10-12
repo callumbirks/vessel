@@ -17,7 +17,7 @@ object UiManager {
     lateinit var service: MenuService
 
     private val BUILTIN_COMMANDS = listOf(
-        UtilTake, UtilMapList, UtilPage, UtilEntries, UtilLookup, UiNavigate, UiClose, UiSetState, UiRefresh
+        UtilTake, UtilMapList, UtilPage, UtilEntries, UtilLookup, UtilCount, UiNavigate, UiClose, UiSetState, UiRefresh
     )
 
     private val BUILTIN_COMP_MAPPERS = listOf(PlayerHeadUiComponentMapper)

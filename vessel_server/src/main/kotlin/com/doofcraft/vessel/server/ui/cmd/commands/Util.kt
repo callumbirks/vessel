@@ -100,3 +100,17 @@ object UtilLookup : UiCommand {
         }
     }
 }
+
+object UtilCount : UiCommand {
+    override val id: String = "util.count"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        val list = input as? List<*> ?: emptyList<Any?>()
+        val cond = args["where"]?.toString()
+        val engine = UiManager.service.engine
+        val count = if (cond == null) list.count() else list.count { elem ->
+            val scope = ctx.toScope(value = elem)
+            engine.eval(cond, scope) == true
+        }
+        return count
+    }
+}

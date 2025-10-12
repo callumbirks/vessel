@@ -81,6 +81,18 @@ class MenuService(
         }
     }
 
+    fun refreshMenu(player: ServerPlayer) {
+        scope.launch {
+            lockFor(player.stringUUID).withLock {
+                val menu = open[player.stringUUID]
+                    ?: return@launch
+                scope.launch {
+                    refreshOnce(player, menu.plan, menu.ctx, menu.cache)
+                }
+            }
+        }
+    }
+
     internal fun onMenuOpened(player: ServerPlayer, syncId: Int) {
         scope.launch {
             lockFor(player.stringUUID).withLock {

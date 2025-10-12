@@ -34,3 +34,13 @@ object UiSetState : UiCommand {
         return ctx.state
     }
 }
+
+object UiRefresh : UiCommand {
+    override val id: String = "ui.refresh"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        val player = VesselServer.server.playerList.getPlayer(UUID.fromString(ctx.playerUuid))
+            ?: return null
+        UiManager.service.refreshMenu(player)
+        return "ok"
+    }
+}

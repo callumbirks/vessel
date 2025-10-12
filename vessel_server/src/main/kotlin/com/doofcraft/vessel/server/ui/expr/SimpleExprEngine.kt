@@ -385,6 +385,9 @@ class SimpleExprEngine : ExprEngine {
                         if (intKey != null) node[intKey] ?: default
                         else default
                     }
+                    is Set<*> -> {
+                        node.contains(keyAny)
+                    }
                     else -> default
                 }
             }

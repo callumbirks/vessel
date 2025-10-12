@@ -24,14 +24,14 @@ object UtilMapList : UiCommand {
 
         val engine = UiManager.service.engine
 
-        return list.map { row ->
+        return list.mapIndexed { i, row ->
             val scope = Scope(
                 menu = mapOf("id" to ctx.menuId),
                 params = ctx.params,
                 player = mapOf("uuid" to ctx.playerUuid),
                 nodeValues = ctx.nodeValues,
                 state = ctx.state,
-                value = row
+                value = row + ("index" to i)
             )
             buildRow(fields, scope, engine)
         }
@@ -92,6 +92,9 @@ object UtilLookup : UiCommand {
                 val intKey = keyAny as? Int ?: keyAny.toString().toIntOrNull()
                 if (intKey != null) input[intKey] ?: default
                 else default
+            }
+            is Set<*> -> {
+                input.contains(keyAny)
             }
             else -> default
         }

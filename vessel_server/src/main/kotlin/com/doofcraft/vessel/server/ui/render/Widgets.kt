@@ -92,9 +92,9 @@ class WidgetRenderer(
                 is WidgetDef.ListWidget -> {
                     val listValue = ctx.nodeValues[w.items.from] as? List<*> ?: emptyList<Any?>()
                     val slots = w.layout.slots
-                    for ((i, raw) in listValue.withIndex()) {
+                    for ((i, raw) in listValue.filterIsInstance<Map<*, *>>().withIndex()) {
                         if (i >= slots.size) break
-                        val valueMap = raw
+                        val valueMap = raw + ("index" to i)
                         val scope = scopeBase.copy(value = valueMap)
                         val stack = renderIcon(w.items.icon, scope, player)
                         val btn = w.items.onClick?.let { act ->

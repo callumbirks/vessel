@@ -89,36 +89,8 @@ data class IconDef(
 
 @Serializable
 data class IconReplacements(
-    val name: Map<String, ComponentSpec> = emptyMap(), val lore: Map<String, ComponentSpec> = emptyMap()
+    val name: Map<String, String> = emptyMap(), val lore: Map<String, String> = emptyMap()
 )
-
-@Serializable
-sealed class ComponentSpec {
-    @Serializable
-    @SerialName("literal")
-    data class Literal(val text: String) : ComponentSpec()
-
-    @Serializable
-    @SerialName("translatable")
-    data class Translatable(
-        val key: String, val args: List<Arg> = emptyList()
-    ) : ComponentSpec() {
-        @Serializable
-        sealed class Arg {
-            @Serializable
-            @SerialName("literal")
-            data class Literal(val text: String) : Arg()
-
-            @Serializable
-            @SerialName("from_node")
-            data class FromNode(val path: String) : Arg()
-        }
-    }
-
-    @Serializable
-    @SerialName("from_node")
-    data class FromNode(val path: String) : ComponentSpec()
-}
 
 @Serializable
 data class ActionDef(

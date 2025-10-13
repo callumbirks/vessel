@@ -174,7 +174,7 @@ class WidgetRenderer(
                     val slots = w.layout.slots
                     for ((i, raw) in listValue.filterIsInstance<Map<*, *>>().withIndex()) {
                         if (i >= slots.size) break
-                        val scope = scopeBase.copy(value = raw)
+                        val scope = scopeBase.copy(value = raw + ("index" to i))
                         val stack = renderIcon(w.items.icon, scope, player)
                         val btn = w.items.onClick?.let { act ->
                             MenuButton(

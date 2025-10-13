@@ -133,7 +133,7 @@ class SimpleExprEngine : ExprEngine {
             var e = parseOr()
             if (la.t == T.QMARK) {
                 eat(T.QMARK)
-                val t = parseExpression()
+                val t = parseOr()
                 eat(T.COLON)
                 val f = parseExpression()
                 e = Node.Ternary(e, t, f)
@@ -188,7 +188,7 @@ class SimpleExprEngine : ExprEngine {
             while (la.t == T.STAR || la.t == T.SLASH || la.t == T.PERCENT) {
                 val op = la.t
                 eat(op)
-                e = Node.Bin(op, e, parseUnary())
+                e = Node.Bin(op, e, parseElvis())
             }
             return e
         }
@@ -385,9 +385,11 @@ class SimpleExprEngine : ExprEngine {
                         if (intKey != null) node[intKey] ?: default
                         else default
                     }
+
                     is Set<*> -> {
                         node.contains(keyAny)
                     }
+
                     else -> default
                 }
             }
@@ -428,6 +430,18 @@ class SimpleExprEngine : ExprEngine {
                     val m = row as? Map<*, *> ?: return@map null
                     getByPath(m, path)
                 }
+            }
+
+            "fmt_secs" -> {
+                val time = (args.getOrNull(0) as? Number)?.toLong() ?: return null
+                val format = args.getOrNull(1)?.toString() ?: "%hh hours, %mm minutes, %ss seconds"
+                val hours = time / 3600
+                val minutes = (time % 3600) / 60
+                val seconds = time % 60
+
+                format.replace("%hh", "%02d".format(hours))
+                    .replace("%mm", "%02d".format(minutes))
+                    .replace("%ss", "%02d".format(seconds))
             }
 
             else -> null
@@ -491,40 +505,115 @@ class SimpleExprEngine : ExprEngine {
     }
 
     private object Template {
-        // Ternary regex is complex to avoid capturing part of an Identifier ('abc:def') as the expression separator.
-        private val blockRegex =
-            Regex("""\{\?\s*(.*?)\s*\?\s*((?:'[^']*'|[^':{}])*?)\s*:\s*((?:'[^']*'|[^{}])*?)\s*}""")
-        private val holeRegex = Regex("""\{([^{}]+)}""")
-
         fun render(input: String, engine: ExprEngine, scope: Scope): String {
-            // First resolve conditional blocks (greedy left-to-right, supports nesting by re-run)
-            var s = input
-            var changed: Boolean
-            do {
-                changed = false
-                s = blockRegex.replace(s) { m ->
-                    changed = true
-                    val cond = m.groupValues[1].trim()
-                    val t = m.groupValues[2].trim('\'').trim()
-                    val f = m.groupValues[3].trim('\'').trim()
+            val out = StringBuilder()
+            var i = 0
+            while (i < input.length) {
+                if (i + 1 < input.length && input[i] == '{' && input[i + 1] == '?') {
+                    // find matching '}' for this block, respecting nested {…}
+                    var j = i + 2
+                    var q = false; var esc = false; var brace = 0; var paren = 0
+                    while (j < input.length) {
+                        val c = input[j]
+                        if (q) {
+                            if (!esc && c == '\'') q = false
+                            esc = !esc && c == '\\'
+                        } else when (c) {
+                            '\'' -> q = true
+                            '('  -> paren++
+                            ')'  -> if (paren > 0) paren--
+                            '{'  -> brace++
+                            '}'  -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
+                        }
+                        j++
+                    }
+                    require(j < input.length) { "Unclosed {? ... } block" }
+                    val body = input.substring(i + 2, j).trim() // content after "{?"
+                    val parts = splitTernaryTopLevel(body)
+                        ?: error("Malformed ternary in template: $body")
+                    val (cond, thenPart, elsePart) = parts
                     val ok = truthy(engine.eval(cond, scope))
-                    // recursively render the chosen branch
-                    render(if (ok) t else f, engine, scope)
-                }
-            } while (changed)
-            // Then simple { expr } holes
-            s = holeRegex.replace(s) { m ->
-                val expr = m.groupValues[1].trim()
-                val v = engine.eval(expr, scope)
-                when (v) {
-                    null -> ""
-                    is String -> v
-                    is Number, is Boolean -> v.toString()
-                    else -> v.toString()
+                    val chosen = if (ok) thenPart else elsePart
+                    // recurse so nested templates inside branches are handled
+                    out.append(render(unquoteIfSingle(chosen), engine, scope))
+                    i = j + 1
+                } else if (input[i] == '{') {
+                    // simple { expr } hole
+                    var j = i + 1
+                    var q = false; var esc = false; var brace = 0; var paren = 0
+                    while (j < input.length) {
+                        val c = input[j]
+                        if (q) {
+                            if (!esc && c == '\'') q = false
+                            esc = !esc && c == '\\'
+                        } else when (c) {
+                            '\'' -> q = true
+                            '('  -> paren++
+                            ')'  -> if (paren > 0) paren--
+                            '{'  -> brace++
+                            '}'  -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
+                        }
+                        j++
+                    }
+                    require(j < input.length) { "Unclosed { expr } hole" }
+                    val expr = input.substring(i + 1, j).trim()
+                    val v = engine.eval(expr, scope)
+                    out.append(
+                        when (v) {
+                            null -> ""
+                            is String -> v
+                            is Number, is Boolean -> v.toString()
+                            else -> v.toString()
+                        }
+                    )
+                    i = j + 1
+                } else {
+                    out.append(input[i++])
                 }
             }
-            return s
+            return out.toString()
         }
+
+        // Split "<cond> ? <then> : <else>" into parts, ignoring ?/: inside quotes, () and {...}
+        private fun splitTernaryTopLevel(s: String): Triple<String, String, String>? {
+            var i = 0
+            var q = false          // inside single quotes
+            var esc = false
+            var paren = 0          // ()
+            var brace = 0          // nested {...}
+            var qm = -1
+            var colon = -1
+
+            fun atTop() = !q && !esc && paren == 0 && brace == 0
+
+            while (i < s.length) {
+                val c = s[i]
+                if (q) {
+                    if (!esc && c == '\'') q = false
+                    esc = !esc && c == '\\'
+                    i++; continue
+                }
+                when (c) {
+                    '\'' -> q = true
+                    '('  -> paren++
+                    ')'  -> if (paren > 0) paren--
+                    '{'  -> brace++
+                    '}'  -> if (brace > 0) brace--
+                    '?'  -> if (atTop() && qm == -1) qm = i
+                    ':'  -> if (atTop() && qm != -1) { colon = i; break }
+                }
+                i++
+            }
+            if (qm == -1 || colon == -1) return null
+            val cond = s.take(qm).trim()
+            val then = s.substring(qm + 1, colon).trim()
+            val els  = s.substring(colon + 1).trim()
+            return Triple(cond, then, els)
+        }
+
+        // optional: remove wrapping single quotes only if both ends match
+        private fun unquoteIfSingle(s: String): String =
+            if (s.length >= 2 && s.first() == '\'' && s.last() == '\'') s.substring(1, s.length - 1) else s
 
         private fun truthy(v: Any?): Boolean = when (v) {
             null -> false

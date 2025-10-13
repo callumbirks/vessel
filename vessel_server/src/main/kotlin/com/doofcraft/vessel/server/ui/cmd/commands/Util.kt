@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.server.ui.cmd.commands
 
 import com.doofcraft.vessel.server.ui.UiManager
+import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.UiCommand
 import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
@@ -17,23 +18,24 @@ object UtilTake : UiCommand {
 }
 
 object UtilMapList : UiCommand {
-    override val id: String = "util.map"
+    override val id: String = "util.map_list"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         val list = (input as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
-        val fields = args["fields"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+        val fields = args["fields"] as? Map<*, *>
+        val cmdId = args["cmd"]?.toString()
 
         val engine = UiManager.service.engine
 
-        return list.mapIndexed { i, row ->
-            val scope = Scope(
-                menu = mapOf("id" to ctx.menuId),
-                params = ctx.params,
-                player = mapOf("uuid" to ctx.playerUuid),
-                nodeValues = ctx.nodeValues,
-                state = ctx.state,
-                value = row
-            )
+        return if (cmdId == null && fields != null) list.mapIndexed { i, row ->
+            val scope = ctx.toScope(value = row + ("index" to i))
             buildRow(fields, scope, engine)
+        } else if (cmdId != null) {
+            val cmd = CommandBus.get(cmdId)
+            list.map { row ->
+                cmd.run(ctx, row, emptyMap())
+            }
+        } else {
+            emptyList()
         }
     }
 
@@ -53,6 +55,27 @@ object UtilMapList : UiCommand {
             out[key] = value
         }
         return out
+    }
+}
+
+object UtilMapValues : UiCommand {
+    override val id: String = "util.map_values"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        val map = input as? Map<*, *> ?: return null
+        val cmdId = args["cmd"]?.toString()
+        val eval = args["eval"]?.toString()
+        return if (cmdId != null) {
+            val cmd = CommandBus.get(cmdId)
+            map.mapValues { (_, value) ->
+                cmd.run(ctx, value, emptyMap())
+            }
+        } else if (eval != null) {
+            map.mapValues { (_, value) ->
+                UiManager.service.engine.eval(eval, ctx.toScope(value = value))
+            }
+        } else {
+            emptyMap()
+        }
     }
 }
 
@@ -93,9 +116,11 @@ object UtilLookup : UiCommand {
                 if (intKey != null) input[intKey] ?: default
                 else default
             }
+
             is Set<*> -> {
                 input.contains(keyAny)
             }
+
             else -> default
         }
     }
@@ -112,5 +137,14 @@ object UtilCount : UiCommand {
             engine.eval(cond, scope) == true
         }
         return count
+    }
+}
+
+object UtilEval : UiCommand {
+    override val id: String = "util.eval"
+    override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
+        val expr = args["expr"]?.toString() ?: return null
+        val scope = ctx.toScope(value = input)
+        return UiManager.service.engine.eval(expr, scope)
     }
 }

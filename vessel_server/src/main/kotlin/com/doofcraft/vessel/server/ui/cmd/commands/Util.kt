@@ -5,8 +5,12 @@ import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.UiCommand
 import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
+import com.doofcraft.vessel.server.ui.expr.ExprRef
+import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
 import com.doofcraft.vessel.server.ui.expr.SimpleExprEngine
+import com.doofcraft.vessel.server.ui.expr.TemplateRef
+import com.doofcraft.vessel.server.ui.expr.evalDeferred
 
 object UtilTake : UiCommand {
     override val id: String = "util.take"
@@ -21,21 +25,40 @@ object UtilMapList : UiCommand {
     override val id: String = "util.map_list"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         val list = (input as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
-        val fields = args["fields"] as? Map<*, *>
-        val cmdId = args["cmd"]?.toString()
 
+        VesselMod.LOGGER.info("MAP_LIST input = $list, args = $args, ctx = $ctx")
+
+        val fields = args["fields"] as? Map<*, *>
         val engine = UiManager.service.engine
 
-        return if (cmdId == null && fields != null) list.mapIndexed { i, row ->
-            val scope = ctx.toScope(value = row + ("index" to i))
-            buildRow(fields, scope, engine)
-        } else if (cmdId != null) {
-            val cmd = CommandBus.get(cmdId)
-            list.map { row ->
-                cmd.run(ctx, row, emptyMap())
+        if (fields != null) {
+            return list.mapIndexed { i, row ->
+                val scope = ctx.toScope(value = row + ("index" to i))
+                buildRow(fields, scope, engine)
             }
-        } else {
-            emptyList()
+        }
+
+        val cmdId = args["cmd"]?.toString() ?: return emptyList<Any?>()
+
+        val cmdInput = args["input"]
+        val cmdArgs = args["args"] as? Map<String, Any?>
+
+        val cmd = CommandBus.get(cmdId)
+
+        return list.mapIndexed { i, row ->
+            val scope = ctx.toScope(value = row + ("index" to i))
+            val input = when (cmdInput) {
+                is String -> engine.eval(cmdInput, scope)
+                else -> cmdInput.evalDeferred(engine, scope)
+            }
+            val args = cmdArgs?.mapValues { (_, value) ->
+                when (value) {
+                    is String -> engine.eval(value, scope)
+                    else -> value.evalDeferred(engine, scope)
+                }
+            } ?: emptyMap()
+
+            cmd.run(ctx, input, args)
         }
     }
 

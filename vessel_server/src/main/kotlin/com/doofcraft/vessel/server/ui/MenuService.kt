@@ -130,6 +130,9 @@ class MenuService(
     private suspend fun refreshOnce(
         player: ServerPlayer, plan: DataPlan, ctx: UiContext, cache: NodeCache, nodes: List<String>? = null
     ) {
+        for ((k, v) in plan.def.state) {
+            ctx.state[k] = engine.renderTemplate(v, ctx.toScope())
+        }
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
         executor.executeAll(plan, ctx, cache)
         val scope = ctx.toScope()

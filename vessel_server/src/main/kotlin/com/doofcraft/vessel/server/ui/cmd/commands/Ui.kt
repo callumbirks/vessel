@@ -31,6 +31,8 @@ object UiSetState : UiCommand {
     override val id: String = "ui.set_state"
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         for ((k, v) in args) if (v != null) ctx.state[k] = v else ctx.state.remove(k)
+        val player = VesselServer.server.playerList.getPlayer(UUID.fromString(ctx.playerUuid))
+        player?.let { UiManager.service.refreshMenu(it) }
         return ctx.state
     }
 }

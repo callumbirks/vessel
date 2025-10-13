@@ -11,6 +11,7 @@ class MenuDefinition(
     val rows: Int,
     @SerialName("open_params") val openParams: Map<String, String>? = null,
     val refresh: Refresh? = null,
+    val state: Map<String, String> = emptyMap(),
     val data: Map<String, DataNodeDef> = emptyMap(),
     val widgets: List<WidgetDef> = emptyList()
 ) {

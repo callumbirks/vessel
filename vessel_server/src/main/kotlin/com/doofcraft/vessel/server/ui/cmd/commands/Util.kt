@@ -51,8 +51,9 @@ object UtilMapList : UiCommand {
                 is String -> engine.eval(cmdInput, scope)
                 else -> cmdInput.evalDeferred(engine, scope)
             }
-            val args = cmdArgs?.mapValues { (_, value) ->
-                when (value) {
+            val args = cmdArgs?.mapValues { (key, value) ->
+                if (key == "cmd") value
+                else when (value) {
                     is String -> engine.eval(value, scope)
                     else -> value.evalDeferred(engine, scope)
                 }

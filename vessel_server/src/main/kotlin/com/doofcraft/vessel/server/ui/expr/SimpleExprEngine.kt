@@ -116,7 +116,8 @@ class SimpleExprEngine : ExprEngine {
 
     private sealed interface Node {
         data class Lit(val v: Any?) : Node
-        data class Var(val parts: List<String>) : Node
+        data class Var(val name: String) : Node // @-root only
+        data class Sym(val name: String) : Node // bare identifier used as a base for parsing Node.Call (fn call)
         data class GetProp(val base: Node, val name: String) : Node
         data class Call(val fn: String, val args: List<Node>) : Node
         data class Unary(val op: T, val a: Node) : Node
@@ -218,14 +219,18 @@ class SimpleExprEngine : ExprEngine {
             loop@ while (true) {
                 when (la.t) {
                     T.DOT -> {
-                        eat(T.DOT);
-                        val id = expect(T.ID); e = Node.GetProp(e, id.s)
+                        if (e is Node.Var || e is Node.GetProp) {
+                            eat(T.DOT)
+                            val id = expect(T.ID)
+                            e = Node.GetProp(e, id.s)
+                        } else {
+                            throw IllegalArgumentException("Property access is only allowed on @-variables")
+                        }
                     }
 
                     T.LPAR -> {
                         // simple function call i.e. fn(...)
-                        if (e is Node.Var && e.parts.size == 1) {
-                            val fn = e.parts.first()
+                        if (e is Node.Sym) {
                             eat(T.LPAR)
                             val args = mutableListOf<Node>()
                             if (la.t != T.RPAR) {
@@ -234,14 +239,17 @@ class SimpleExprEngine : ExprEngine {
                                 } while (accept(T.COMMA))
                             }
                             eat(T.RPAR)
-                            e = Node.Call(fn, args)
+                            e = Node.Call(e.name, args)
                         } else {
-                            throw IllegalArgumentException("Only simple function calls supported")
+                            throw IllegalArgumentException("Only bare identifiers can be called as functions.")
                         }
                     }
 
                     else -> break@loop
                 }
+            }
+            if (e is Node.Sym) {
+                throw IllegalArgumentException("Bare identifier '${e.name}' is not allowed here. Use @-prefixed variables or a function call.")
             }
             return e
         }
@@ -270,7 +278,7 @@ class SimpleExprEngine : ExprEngine {
 
                 T.ID -> {
                     val id = la.s; eat(T.ID)
-                    Node.Var(listOf(id))
+                    if (id.startsWith("@")) Node.Var(id) else Node.Sym(id)
                 }
 
                 T.LPAR -> {
@@ -304,11 +312,14 @@ class SimpleExprEngine : ExprEngine {
     private object Eval {
         fun eval(n: Node, sc: Scope): Any? = when (n) {
             is Node.Lit -> n.v
-            is Node.Var -> resolveVar(n.parts, sc)
+            is Node.Var -> resolveVar(n.name, sc)
+            // Just return bare symbols un-changed
+            is Node.Sym -> error("Bare identifier '${n.name}' is not allowed; use @-variable or function call.")
             is Node.GetProp -> {
                 val base = eval(n.base, sc)
                 when (base) {
                     is Map<*, *> -> base[n.name]
+                    is List<*> -> n.name.toIntOrNull()?.let { idx -> base.getOrNull(idx) }
                     else -> null
                 }
             }
@@ -344,32 +355,16 @@ class SimpleExprEngine : ExprEngine {
             is Node.Ternary -> if (truthy(eval(n.c, sc))) eval(n.t, sc) else eval(n.f, sc)
         }
 
-        private fun resolveVar(path: List<String>, sc: Scope): Any? {
-            val head = path.first()
-            val (root, offset) = when (head) {
-                "@value" -> sc.value to 1
-                "@state" -> sc.state to 1
-                "@params" -> sc.params to 1
-                "@player" -> sc.player to 1
-                "@menu" -> sc.menu to 1
-                "@data" -> sc.nodeValues to 1
-                else -> emptyMap<String, Any?>() to 0
+        private fun resolveVar(name: String, sc: Scope): Any? {
+            return when (name) {
+                "@value" -> sc.value
+                "@state" -> sc.state
+                "@params" -> sc.params
+                "@player" -> sc.player
+                "@menu" -> sc.menu
+                "@data" -> sc.nodeValues
+                else -> null
             }
-            var cur: Any? = root
-            var i = offset
-            while (i < path.size) {
-                cur = when (cur) {
-                    is Map<*, *> -> cur[path[i]]
-                    is List<*> -> {
-                        val idx = path[i].toIntOrNull() ?: return null
-                        cur.getOrNull(idx)
-                    }
-
-                    else -> return null
-                }
-                i++
-            }
-            return cur
         }
 
         private fun call(fn: String, args: List<Any?>, sc: Scope): Any? = when (fn) {
@@ -512,7 +507,10 @@ class SimpleExprEngine : ExprEngine {
                 if (i + 1 < input.length && input[i] == '{' && input[i + 1] == '?') {
                     // find matching '}' for this block, respecting nested {…}
                     var j = i + 2
-                    var q = false; var esc = false; var brace = 0; var paren = 0
+                    var q = false;
+                    var esc = false;
+                    var brace = 0;
+                    var paren = 0
                     while (j < input.length) {
                         val c = input[j]
                         if (q) {
@@ -520,17 +518,16 @@ class SimpleExprEngine : ExprEngine {
                             esc = !esc && c == '\\'
                         } else when (c) {
                             '\'' -> q = true
-                            '('  -> paren++
-                            ')'  -> if (paren > 0) paren--
-                            '{'  -> brace++
-                            '}'  -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
+                            '(' -> paren++
+                            ')' -> if (paren > 0) paren--
+                            '{' -> brace++
+                            '}' -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
                         }
                         j++
                     }
                     require(j < input.length) { "Unclosed {? ... } block" }
                     val body = input.substring(i + 2, j).trim() // content after "{?"
-                    val parts = splitTernaryTopLevel(body)
-                        ?: error("Malformed ternary in template: $body")
+                    val parts = splitTernaryTopLevel(body) ?: error("Malformed ternary in template: $body")
                     val (cond, thenPart, elsePart) = parts
                     val ok = truthy(engine.eval(cond, scope))
                     val chosen = if (ok) thenPart else elsePart
@@ -540,7 +537,10 @@ class SimpleExprEngine : ExprEngine {
                 } else if (input[i] == '{') {
                     // simple { expr } hole
                     var j = i + 1
-                    var q = false; var esc = false; var brace = 0; var paren = 0
+                    var q = false;
+                    var esc = false;
+                    var brace = 0;
+                    var paren = 0
                     while (j < input.length) {
                         val c = input[j]
                         if (q) {
@@ -548,10 +548,10 @@ class SimpleExprEngine : ExprEngine {
                             esc = !esc && c == '\\'
                         } else when (c) {
                             '\'' -> q = true
-                            '('  -> paren++
-                            ')'  -> if (paren > 0) paren--
-                            '{'  -> brace++
-                            '}'  -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
+                            '(' -> paren++
+                            ')' -> if (paren > 0) paren--
+                            '{' -> brace++
+                            '}' -> if (brace == 0 && paren == 0) break else if (brace > 0) brace--
                         }
                         j++
                     }
@@ -595,19 +595,21 @@ class SimpleExprEngine : ExprEngine {
                 }
                 when (c) {
                     '\'' -> q = true
-                    '('  -> paren++
-                    ')'  -> if (paren > 0) paren--
-                    '{'  -> brace++
-                    '}'  -> if (brace > 0) brace--
-                    '?'  -> if (atTop() && qm == -1) qm = i
-                    ':'  -> if (atTop() && qm != -1) { colon = i; break }
+                    '(' -> paren++
+                    ')' -> if (paren > 0) paren--
+                    '{' -> brace++
+                    '}' -> if (brace > 0) brace--
+                    '?' -> if (atTop() && qm == -1) qm = i
+                    ':' -> if (atTop() && qm != -1) {
+                        colon = i; break
+                    }
                 }
                 i++
             }
             if (qm == -1 || colon == -1) return null
             val cond = s.take(qm).trim()
             val then = s.substring(qm + 1, colon).trim()
-            val els  = s.substring(colon + 1).trim()
+            val els = s.substring(colon + 1).trim()
             return Triple(cond, then, els)
         }
 

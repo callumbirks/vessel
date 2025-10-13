@@ -133,7 +133,7 @@ class SimpleExprEngine : ExprEngine {
             var e = parseOr()
             if (la.t == T.QMARK) {
                 eat(T.QMARK)
-                val t = parseOr()
+                val t = parseExpression()
                 eat(T.COLON)
                 val f = parseExpression()
                 e = Node.Ternary(e, t, f)

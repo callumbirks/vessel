@@ -79,6 +79,7 @@ class WidgetRenderer(
                 val tokenRegex = Regex("%([a-zA-Z0-9_]+)%")
                 for (line in lore) {
                     val m = tokenRegex.find(line)
+                    val md = MineDown(line).replaceFirst(true)
                     if (m != null) {
                         val key = m.groupValues[1]
                         val multi = loreMultiLineRepls[key]
@@ -90,7 +91,7 @@ class WidgetRenderer(
                         if (multi != null) {
                             // Token embedded in text -> duplicate the template line and replace each line
                             for (replacement in multi) {
-                                val md = MineDown(line).replaceFirst(true).apply {
+                                val md = md.copy().apply {
                                     replace(key, replacement)
                                     loreSingleLineRepls.forEach { (k, v) -> if (k != key) replace(k, v) }
                                 }
@@ -99,10 +100,10 @@ class WidgetRenderer(
                             continue
                         }
                         // Key is not a multiline replacement -> apply normal single-line replacements
-                        val rendered = MineDown(line).replaceFirst(true).apply {
-                            loreSingleLineRepls.forEach { (k, v) -> replace(k, v) }
-                        }
-                        finalLore += rendered.toComponent()
+                        val md = md.copy().apply { loreSingleLineRepls.forEach { (k, v) -> replace(k, v) } }
+                        finalLore += md.toComponent()
+                    } else {
+                        finalLore += md.toComponent()
                     }
                 }
 

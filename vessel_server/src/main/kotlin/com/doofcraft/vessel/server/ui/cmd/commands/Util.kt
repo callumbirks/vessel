@@ -74,7 +74,7 @@ object UtilMapValues : UiCommand {
                 UiManager.service.engine.eval(eval, ctx.toScope(value = value))
             }
         } else {
-            emptyMap()
+            map
         }
     }
 }

@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.CommonColors
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.ItemLore
+import kotlin.math.min
 
 data class RenderedMenu(
     val items: Map<Int, ItemStack>
@@ -145,10 +146,11 @@ class WidgetRenderer(
 
                     val stack = renderIcon(w.icon, scopeBase, player)
                     val button = if (enabled) w.onClick?.let { act ->
-                        MenuButton(
-                            cmd = act.run,
-                            args = act.args?.let { JsonTemplater.templatizeMap(it, engine, scopeBase) } ?: emptyMap())
+                        MenuButton(cmd = act.run, args = act.args?.let { args ->
+                            JsonTemplater.templatizeMap(args, engine, scopeBase).mapValues { it.value ?: "" }
+                        } ?: emptyMap())
                     } else null
+                    VesselMod.LOGGER.info("Created MenuButton $button")
                     out[w.slot] = if (button != null) stack.withButton(button) else stack
                 }
 
@@ -170,17 +172,21 @@ class WidgetRenderer(
                     } ?: false
                     if (hidden) return@forEach
 
-                    val listValue = w.items.from?.let { ctx.nodeValues[it] } as? List<*> ?: emptyList<Any?>()
+                    val listSource = w.items.from?.let { ctx.nodeValues[it] } as? List<*>
                     val slots = w.layout.slots
-                    for (i in 0 until slots.size) {
+                    // If there is a 'from' source, it.size, otherwise, slots.size
+                    val size = listSource?.let { min(it.size, slots.size) } ?: slots.size
+                    val listValue = listSource ?: emptyList<Any?>()
+                    for (i in 0 until size) {
                         val raw = listValue.getOrNull(i) as? Map<*, *> ?: emptyMap<String, Any?>()
                         val scope = scopeBase.copy(value = raw + ("index" to i))
                         val stack = renderIcon(w.items.icon, scope, player)
                         val btn = w.items.onClick?.let { act ->
-                            MenuButton(
-                                cmd = engine.renderTemplate(act.run, scope),
-                                args = act.args?.let { JsonTemplater.templatizeMap(it, engine, scope) } ?: emptyMap())
+                            MenuButton(cmd = engine.renderTemplate(act.run, scope), args = act.args?.let { args ->
+                                JsonTemplater.templatizeMap(args, engine, scope).mapValues { it.value ?: "" }
+                            } ?: emptyMap())
                         }
+                        VesselMod.LOGGER.info("Created MenuButton $btn")
                         out[slots[i]] = if (btn != null) stack.withButton(btn) else stack
                     }
                 }

@@ -170,7 +170,7 @@ class WidgetRenderer(
                     } ?: false
                     if (hidden) return@forEach
 
-                    val listValue = ctx.nodeValues[w.items.from] as? List<*> ?: emptyList<Any?>()
+                    val listValue = w.items.from?.let { ctx.nodeValues[it] } as? List<*> ?: emptyList<Any?>()
                     val slots = w.layout.slots
                     for (i in 0 until slots.size) {
                         val raw = listValue.getOrNull(i) as? Map<*, *> ?: emptyMap<String, Any?>()

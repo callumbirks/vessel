@@ -150,7 +150,6 @@ class WidgetRenderer(
                             JsonTemplater.templatizeMap(args, engine, scopeBase).mapValues { it.value ?: "" }
                         } ?: emptyMap())
                     } else null
-                    VesselMod.LOGGER.info("Created MenuButton $button")
                     out[w.slot] = if (button != null) stack.withButton(button) else stack
                 }
 
@@ -186,7 +185,6 @@ class WidgetRenderer(
                                 JsonTemplater.templatizeMap(args, engine, scope).mapValues { it.value ?: "" }
                             } ?: emptyMap())
                         }
-                        VesselMod.LOGGER.info("Created MenuButton $btn")
                         out[slots[i]] = if (btn != null) stack.withButton(btn) else stack
                     }
                 }

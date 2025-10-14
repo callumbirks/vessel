@@ -74,7 +74,7 @@ sealed class WidgetDef {
 
         @Serializable
         data class Items(
-            val from: String, // data node id
+            val from: String? = null, // data node id
             val icon: IconDef, @SerialName("on_click") val onClick: ActionDef? = null
         )
     }

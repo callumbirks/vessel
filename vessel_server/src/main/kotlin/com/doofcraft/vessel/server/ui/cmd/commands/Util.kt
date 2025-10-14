@@ -23,10 +23,10 @@ object UtilTake : UiCommand {
 
 object UtilMapList : UiCommand {
     override val id: String = "util.map_list"
+    // We will evaluate these args ourselves so we can have the correct scope.
+    override fun deferArgKeys() = setOf("input", "args")
     override suspend fun run(ctx: UiContext, input: Any?, args: Map<String, Any?>): Any? {
         val list = (input as? List<*>)?.filterIsInstance<Map<String, Any?>>().orEmpty()
-
-        VesselMod.LOGGER.info("MAP_LIST input = $list, args = $args, ctx = $ctx")
 
         val fields = args["fields"] as? Map<*, *>
         val engine = UiManager.service.engine
@@ -41,25 +41,18 @@ object UtilMapList : UiCommand {
         val cmdId = args["cmd"]?.toString() ?: return emptyList<Any?>()
 
         val cmdInput = args["input"]
-        val cmdArgs = args["args"] as? Map<String, Any?>
-
-        val cmd = CommandBus.get(cmdId)
+        val cmdArgs = args["args"] as? Map<*, *> ?: emptyMap<String, Any?>()
 
         return list.mapIndexed { i, row ->
             val scope = ctx.toScope(value = row + ("index" to i))
-            val input = when (cmdInput) {
-                is String -> engine.eval(cmdInput, scope)
-                else -> cmdInput.evalDeferred(engine, scope)
+            // In map_list we eval input and args here, rather than before the function was called.
+            // This allows us to use the list element as value in the scope.
+            val input = cmdInput.evalDeferred(engine, scope)
+            val args = cmdArgs.entries.associate { (key, value) ->
+                key.toString() to value.evalDeferred(engine, scope)
             }
-            val args = cmdArgs?.mapValues { (key, value) ->
-                if (key == "cmd") value
-                else when (value) {
-                    is String -> engine.eval(value, scope)
-                    else -> value.evalDeferred(engine, scope)
-                }
-            } ?: emptyMap()
 
-            cmd.run(ctx, input, args)
+            CommandBus.run(cmdId, ctx, input, args)
         }
     }
 
@@ -89,9 +82,8 @@ object UtilMapValues : UiCommand {
         val cmdId = args["cmd"]?.toString()
         val eval = args["eval"]?.toString()
         return if (cmdId != null) {
-            val cmd = CommandBus.get(cmdId)
             map.mapValues { (_, value) ->
-                cmd.run(ctx, value, emptyMap())
+                CommandBus.run(cmdId, ctx, value, emptyMap())
             }
         } else if (eval != null) {
             map.mapValues { (_, value) ->

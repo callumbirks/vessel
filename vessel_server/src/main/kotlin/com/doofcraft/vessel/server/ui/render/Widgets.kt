@@ -147,8 +147,7 @@ class WidgetRenderer(
                     val button = if (enabled) w.onClick?.let { act ->
                         MenuButton(
                             cmd = act.run,
-                            args = act.args?.let { JsonTemplater.templatizeStringMap(it, engine, scopeBase) }
-                                ?: emptyMap())
+                            args = act.args?.let { JsonTemplater.templatizeMap(it, engine, scopeBase) } ?: emptyMap())
                     } else null
                     out[w.slot] = if (button != null) stack.withButton(button) else stack
                 }
@@ -180,8 +179,7 @@ class WidgetRenderer(
                         val btn = w.items.onClick?.let { act ->
                             MenuButton(
                                 cmd = engine.renderTemplate(act.run, scope),
-                                args = act.args?.let { JsonTemplater.templatizeStringMap(it, engine, scope) }
-                                    ?: emptyMap())
+                                args = act.args?.let { JsonTemplater.templatizeMap(it, engine, scope) } ?: emptyMap())
                         }
                         out[slots[i]] = if (btn != null) stack.withButton(btn) else stack
                     }

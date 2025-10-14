@@ -8,6 +8,7 @@ import com.doofcraft.vessel.server.ui.data.DataExecutor
 import com.doofcraft.vessel.server.ui.data.DataPlan
 import com.doofcraft.vessel.server.ui.data.DataPlanner
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
+import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
 import com.doofcraft.vessel.server.ui.handler.GenericInventoryScreenHandler
 import com.doofcraft.vessel.server.ui.handler.InventoryMenuContainer
@@ -66,6 +67,12 @@ class MenuService(
                 open.remove(playerUuid)?.job?.cancelAndJoin()
 
                 val job = scope.launch {
+                    val scope = ctx.toScope()
+                    for ((k, v) in plan.def.state) {
+                        val value = JsonTemplater.templatizeString(v, engine, scope)
+                        if (value != null) ctx.state[k] = value
+                        else ctx.state.remove(k)
+                    }
                     refreshOnce(player, plan, ctx, cache)
                     val interval = def.refresh?.intervalMs ?: 0L
                     if (interval > 0) {
@@ -115,11 +122,10 @@ class MenuService(
     }
 
     fun clickButton(player: ServerPlayer, menuButton: MenuButton) {
-        val cmd = CommandBus.get(menuButton.cmd)
         val ctx = getContext(player)
             ?: return
         scope.launch {
-            cmd.run(ctx, null, menuButton.args)
+            CommandBus.run(menuButton.cmd, ctx, null, menuButton.args)
         }
     }
 
@@ -130,9 +136,6 @@ class MenuService(
     private suspend fun refreshOnce(
         player: ServerPlayer, plan: DataPlan, ctx: UiContext, cache: NodeCache, nodes: List<String>? = null
     ) {
-        for ((k, v) in plan.def.state) {
-            ctx.state[k] = engine.renderTemplate(v, ctx.toScope())
-        }
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
         executor.executeAll(plan, ctx, cache)
         val scope = ctx.toScope()
@@ -152,7 +155,7 @@ class MenuService(
                 }
             }
 
-        if (openMenu.name == renderedTitle) {
+        if (openMenu.name == renderedTitle && openMenu.size == plan.def.rows * 9) {
             // If the name has stayed the same we can just patch the items
             openMenu.patchItems(rendered.items)
         } else {

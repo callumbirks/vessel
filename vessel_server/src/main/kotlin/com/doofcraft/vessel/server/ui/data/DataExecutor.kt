@@ -53,9 +53,8 @@ class DataExecutor(
             }
             val inputValue = resolveInput(node.input, ctx)
             val resolvedArgs = resolveArgs(node.args, ctx)
-            val cmd = CommandBus.get(node.cmd)
 
-            val value = cmd.run(ctx, inputValue, resolvedArgs)
+            val value = CommandBus.run(node.cmd, ctx, inputValue, resolvedArgs)
 
             if (value != null) ctx.nodeValues[nodeId] = value
             else ctx.nodeValues.remove(nodeId)

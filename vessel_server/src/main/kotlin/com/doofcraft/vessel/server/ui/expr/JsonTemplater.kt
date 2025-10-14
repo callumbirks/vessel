@@ -12,6 +12,7 @@ object JsonTemplater {
                     ?: el[$$"$template"]?.let { TemplateRef(it.jsonPrimitive.content) }
                     ?: el.mapValues { (_, v) -> templatize(v, engine, scope) }
             }
+
             is JsonArray -> el.map { templatize(it, engine, scope) }
             is JsonPrimitive -> if (el.isString) templatizeString(el.content, engine, scope) else el.booleanOrNull
                 ?: el.longOrNull ?: el.doubleOrNull ?: el.content
@@ -34,10 +35,8 @@ object JsonTemplater {
         return map.mapValues { (_, v) -> templatize(v, engine, scope) }
     }
 
-    fun templatizeStringMap(map: Map<String, String>, engine: ExprEngine, scope: Scope): Map<String, String> {
-        // TODO: Support 'templatizeString()' by making MenuButton args support more than String values, maybe via JSON?
-        val result = map.mapKeys { (k, _) -> engine.renderTemplate(k, scope) }
-            .mapValues { (_, v) -> engine.renderTemplate(v, scope) }
-        return result
+    fun templatizeMap(map: Map<String, String>, engine: ExprEngine, scope: Scope): Map<String, Any?> {
+        return map.mapKeys { (k, _) -> engine.renderTemplate(k, scope) }
+            .mapValues { (_, v) -> templatizeString(v, engine, scope) }
     }
 }

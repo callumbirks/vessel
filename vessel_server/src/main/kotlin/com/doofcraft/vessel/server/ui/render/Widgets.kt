@@ -179,6 +179,13 @@ class WidgetRenderer(
                     for (i in 0 until size) {
                         val raw = listValue.getOrNull(i) as? Map<*, *> ?: emptyMap<String, Any?>()
                         val scope = scopeBase.copy(value = raw + ("index" to i))
+                        // Each individual element can also be hidden
+                        val hidden = w.items.hideIf?.let {
+                            val result = engine.eval(it, scope)
+                            result != 0 && result != false
+                        } ?: false
+                        if (hidden) continue
+
                         val stack = renderIcon(w.items.icon, scope, player)
                         val btn = w.items.onClick?.let { act ->
                             MenuButton(cmd = engine.renderTemplate(act.run, scope), args = act.args?.let { args ->

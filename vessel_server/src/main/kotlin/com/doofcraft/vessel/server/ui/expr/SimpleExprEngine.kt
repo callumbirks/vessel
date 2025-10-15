@@ -460,6 +460,14 @@ class SimpleExprEngine : ExprEngine {
             else -> 0.0
         }
 
+        private fun numOrNull(v: Any?): Double? = when (v) {
+            is Number -> v.toDouble()
+            is String -> v.toDoubleOrNull() ?: 0.0
+            is Boolean -> if (v) 1.0 else 0.0
+            null -> null
+            else -> 0.0
+        }
+
         private fun plus(a: Any?, b: Any?): Any {
             // string concat if any is string
             if (a is String || b is String) return toStr(a) + toStr(b)
@@ -468,7 +476,7 @@ class SimpleExprEngine : ExprEngine {
 
         private fun eq(a: Any?, b: Any?): Boolean {
             return when {
-                a is Number || b is Number -> num(a) == num(b)
+                a is Number || b is Number -> numOrNull(a) == numOrNull(b)
                 else -> a == b
             }
         }

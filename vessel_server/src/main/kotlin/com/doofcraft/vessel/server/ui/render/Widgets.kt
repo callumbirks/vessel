@@ -171,7 +171,7 @@ class WidgetRenderer(
                     } ?: false
                     if (hidden) return@forEach
 
-                    val listSource = w.items.from?.let { ctx.nodeValues[it] } as? List<*>
+                    val listSource = w.items.from?.let { engine.eval(it, scopeBase) } as? List<*>
                     val slots = w.layout.slots
                     // If there is a 'from' source, it.size, otherwise, slots.size
                     val size = listSource?.let { min(it.size, slots.size) } ?: slots.size

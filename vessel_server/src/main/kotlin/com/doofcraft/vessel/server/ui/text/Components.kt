@@ -3,6 +3,8 @@ package com.doofcraft.vessel.server.ui.text
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
+import com.doofcraft.vessel.server.util.toComponent
+import net.minecraft.network.chat.Component
 import net.kyori.adventure.text.Component as AdvComponent
 
 object ComponentFactory {
@@ -13,6 +15,7 @@ object ComponentFactory {
     fun buildMultiLine(expr: String, engine: ExprEngine, scope: Scope): List<AdvComponent> {
         val value = JsonTemplater.templatizeString(expr, engine, scope)
         return when (value) {
+            is Component -> listOf(value.toComponent())
             is AdvComponent -> listOf(value)
             is List<*> -> {
                 if (value.isEmpty()) listOf(AdvComponent.empty())

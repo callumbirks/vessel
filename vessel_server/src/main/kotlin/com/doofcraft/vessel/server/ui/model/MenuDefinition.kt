@@ -77,6 +77,7 @@ sealed class WidgetDef {
             val from: String? = null, // data node id
             val icon: IconDef,
             @SerialName("hide_if") val hideIf: String? = null,
+            @SerialName("enabled_if") val enabledIf: String? = null,
             @SerialName("on_click") val onClick: ActionDef? = null
         )
     }

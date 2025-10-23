@@ -3,7 +3,7 @@ package com.doofcraft.vessel.server.ui.expr
 import kotlinx.serialization.json.*
 
 object JsonTemplater {
-    private val singleHole = Regex("""^\s*\{\s*([^?].*?)\s*}\s*$""", RegexOption.DOT_MATCHES_ALL)
+    private val singleHole = Regex("""^\s*\{\s*\??\s*(.*?)\s*}\s*$""", RegexOption.DOT_MATCHES_ALL)
 
     fun templatize(el: JsonElement, engine: ExprEngine, scope: Scope): Any? {
         return when (el) {

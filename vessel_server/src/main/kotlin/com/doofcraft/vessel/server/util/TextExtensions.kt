@@ -2,6 +2,7 @@ package com.doofcraft.vessel.server.util
 
 import com.doofcraft.vessel.server.serialization.TextComponentSerializer
 import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.Component as AdvComponent
 import net.minecraft.network.chat.Component as McComponent
 
@@ -14,9 +15,17 @@ fun AdvComponent.toText(): McComponent {
 }
 
 fun AdvComponent.isEmpty(): Boolean {
-    return if (this is TextComponent) {
-        this.content().isEmpty()
-    } else {
-        this.children().isEmpty()
+    return when (this) {
+        is TextComponent -> {
+            this.content().isEmpty() && this.children().all { it.isEmpty() }
+        }
+
+        is TranslatableComponent -> {
+            false
+        }
+
+        else -> {
+            this.children().all { it.isEmpty() }
+        }
     }
 }

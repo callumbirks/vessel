@@ -85,8 +85,8 @@ class SimpleExprEngine : ExprEngine {
             }
 
             return when (c) {
-                '(' -> one(T.LPAR)
-                ')' -> one(T.RPAR)
+                '(', '{' -> one(T.LPAR)
+                ')', '}' -> one(T.RPAR)
                 '?' -> if (peek('?')) two('?', T.ELVIS) else one(T.QMARK)
                 ':' -> one(T.COLON)
                 ',' -> one(T.COMMA)

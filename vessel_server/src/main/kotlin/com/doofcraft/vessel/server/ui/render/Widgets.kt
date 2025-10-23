@@ -188,11 +188,16 @@ class WidgetRenderer(
                         if (hidden) continue
 
                         val stack = renderIcon(w.items.icon, scope, player)
-                        val btn = w.items.onClick?.let { act ->
+                        val enabled = w.items.enabledIf?.let {
+                            val result = engine.eval(it, scope)
+                            result != 0 && result != false
+                        } ?: true
+
+                        val btn = if (enabled) w.items.onClick?.let { act ->
                             MenuButton(cmd = engine.renderTemplate(act.run, scope), args = act.args?.let { args ->
                                 JsonTemplater.templatizeMap(args, engine, scope).mapValues { it.value ?: "" }
                             } ?: emptyMap())
-                        }
+                        } else null
                         out[slots[i]] = if (btn != null) stack.withButton(btn) else stack
                     }
                 }

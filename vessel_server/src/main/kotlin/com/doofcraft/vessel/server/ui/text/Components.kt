@@ -20,7 +20,7 @@ object ComponentFactory {
                 else listOf(AdvComponent.empty())
             }
             is String -> value.lines().map { AdvComponent.text(it) }
-            else -> listOf(AdvComponent.empty())
+            else -> listOf(AdvComponent.text(value.toString()))
         }
     }
 }

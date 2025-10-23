@@ -11,6 +11,7 @@ import com.doofcraft.vessel.server.ui.model.IconDef
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
 import com.doofcraft.vessel.server.ui.model.WidgetDef
 import com.doofcraft.vessel.server.ui.text.ComponentFactory
+import com.doofcraft.vessel.server.util.isEmpty
 import com.doofcraft.vessel.server.util.toText
 import de.themoep.minedown.adventure.MineDown
 import net.kyori.adventure.text.Component
@@ -114,7 +115,7 @@ class WidgetRenderer(
                         replace(placeholder, comp)
                     }
                 })
-                stack[DataComponents.LORE] = ItemLore(finalLore.map { line ->
+                stack[DataComponents.LORE] = ItemLore(finalLore.filterNot { it.isEmpty() }.map { line ->
                     line.toText().copy().withStyle {
                         it.withColor(CommonColors.WHITE).withItalic(false)
                     }

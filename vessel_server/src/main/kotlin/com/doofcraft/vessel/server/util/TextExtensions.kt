@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.server.util
 
 import com.doofcraft.vessel.server.serialization.TextComponentSerializer
+import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.Component as AdvComponent
 import net.minecraft.network.chat.Component as McComponent
 
@@ -10,4 +11,12 @@ fun McComponent.toComponent(): AdvComponent {
 
 fun AdvComponent.toText(): McComponent {
     return TextComponentSerializer().serialize(this)
+}
+
+fun AdvComponent.isEmpty(): Boolean {
+    return if (this is TextComponent) {
+        this.content().isEmpty()
+    } else {
+        this.children().isEmpty()
+    }
 }

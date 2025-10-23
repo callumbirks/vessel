@@ -5,6 +5,7 @@ import com.doofcraft.vessel.common.api.item.ItemStackFactory
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.registry.ModComponents
 import com.doofcraft.vessel.server.api.VesselRegistry
+import com.doofcraft.vessel.server.util.isEmpty
 import com.doofcraft.vessel.server.util.toText
 import de.themoep.minedown.adventure.MineDown
 import net.minecraft.core.component.DataComponents
@@ -42,8 +43,8 @@ class ItemBuilder(val icon: ItemStackFactory) {
             itemStack.set(DataComponents.ITEM_NAME, it.toComponent().toText())
         }
         if (loreMd.isNotEmpty()) {
-            itemStack.set(DataComponents.LORE, ItemLore(loreMd.map {
-                it.toComponent().toText().copy().withStyle {
+            itemStack.set(DataComponents.LORE, ItemLore(loreMd.map { it.toComponent() }.filterNot { it.isEmpty() }.map {
+                it.toText().copy().withStyle {
                     it.withColor(
                         CommonColors.WHITE
                     ).withItalic(false)

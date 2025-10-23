@@ -377,7 +377,7 @@ class SimpleExprEngine : ExprEngine {
                     is Map<*, *> -> if (keyAny == null) node else Util.smartGet(node, keyAny) ?: default
                     is List<*> -> {
                         val intKey = keyAny as? Int ?: keyAny?.toString()?.toIntOrNull()
-                        if (intKey != null) node[intKey] ?: default
+                        if (intKey != null) node.getOrNull(intKey) ?: default
                         else default
                     }
 

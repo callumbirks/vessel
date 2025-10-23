@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.server.ui.text
 
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
+import com.doofcraft.vessel.server.ui.expr.JsonTemplater
 import com.doofcraft.vessel.server.ui.expr.Scope
 import net.kyori.adventure.text.Component as AdvComponent
 
@@ -10,7 +11,7 @@ object ComponentFactory {
     }
 
     fun buildMultiLine(expr: String, engine: ExprEngine, scope: Scope): List<AdvComponent> {
-        val value = engine.eval(expr, scope)
+        val value = JsonTemplater.templatizeString(expr, engine, scope)
         return when (value) {
             is AdvComponent -> listOf(value)
             is List<*> -> {

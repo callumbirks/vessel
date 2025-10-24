@@ -27,7 +27,7 @@ object VesselEvents {
     @JvmField
     val CONTAINER_MENU_CLOSED = SimpleObservable<ContainerMenuClosedEvent>()
 
-    init {
+    fun register() {
         ServerBlockEntityEvents.BLOCK_ENTITY_UNLOAD.register { blockEntity, level ->
             if (blockEntity is VesselBaseBlockEntity) {
                 BLOCK_ENTITY_UNLOAD.emit(BlockEntityUnloadEvent(blockEntity, level))

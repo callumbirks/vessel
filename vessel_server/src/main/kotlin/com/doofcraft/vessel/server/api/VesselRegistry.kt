@@ -15,13 +15,17 @@ object VesselRegistry {
     private val blocks = hashMapOf<String, VesselBlock>()
     private val items = hashMapOf<String, VesselItem>()
 
+    @JvmStatic
     fun getBlock(key: String): VesselBlock? = blocks[key]
 
+    @JvmStatic
     fun getBlockOrThrow(key: String): VesselBlock =
         blocks[key] ?: throw NoSuchElementException("No such VesselBlock '$key'")
 
+    @JvmStatic
     fun getItem(key: String): VesselItem? = items[key]
 
+    @JvmStatic
     fun getItemOrThrow(key: String): VesselItem =
         items[key] ?: throw NoSuchElementException("No such VesselItem '$key'")
 

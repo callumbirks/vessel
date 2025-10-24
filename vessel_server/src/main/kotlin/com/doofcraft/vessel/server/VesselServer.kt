@@ -7,6 +7,7 @@ import com.doofcraft.vessel.common.registry.ModBlocks
 import com.doofcraft.vessel.common.registry.ModComponents
 import com.doofcraft.vessel.common.registry.ModItems
 import com.doofcraft.vessel.server.api.VesselRegistry
+import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.ui.UiManager
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
@@ -42,6 +43,7 @@ object VesselServer: DedicatedServerModInitializer {
         UseBlockCallback.EVENT.register(::useBlock)
         UiManager.register()
         VesselDataProvider.registerDefaults()
+        VesselEvents.register()
     }
 
     // Stuff that needs to run after all mods have been loaded and initialized.

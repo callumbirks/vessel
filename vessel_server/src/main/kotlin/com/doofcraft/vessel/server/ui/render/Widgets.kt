@@ -15,9 +15,9 @@ import com.doofcraft.vessel.server.util.isEmpty
 import com.doofcraft.vessel.server.util.toText
 import de.themoep.minedown.adventure.MineDown
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.util.CommonColors
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.ItemLore
 import kotlin.math.min
@@ -78,29 +78,37 @@ class WidgetRenderer(
                 })
             } else {
                 val finalLore = mutableListOf<Component>()
-                val tokenRegex = Regex("%([a-zA-Z0-9_]+)%")
+                val tokenRegex =
+                    Regex("""((?:&[a-zA-Z0-9_#-]+&|##|\*\*|__|~~|\?\?)*)%([a-zA-Z0-9_]+)%((?:&[a-zA-Z_#-]+&|##|\*\*|__|~~|\?\?)*)""")
                 for (line in lore) {
                     val m = tokenRegex.find(line)
                     val md = MineDown(line).replaceFirst(true)
                     if (m != null) {
-                        val key = m.groupValues[1]
+                        val key = m.groupValues[2]
                         val multi = loreMultiLineRepls[key]
-                        if (multi != null && line.trim() == "%$key%") {
-                            // Whole line is the token -> replace entire line with many lines
-                            finalLore += multi
-                            continue
-                        }
                         if (multi != null) {
-                            // Token embedded in text -> duplicate the template line and replace each line
-                            for (replacement in multi) {
-                                val md = md.copy().apply {
-                                    replace(key, replacement)
-                                    loreSingleLineRepls.forEach { (k, v) -> if (k != key) replace(k, v) }
-                                }
-                                finalLore += md.toComponent()
+                            if (line.trim() == "%$key%") {
+                                // Whole line is the token -> replace entire line with many lines
+                                finalLore += multi
+                                continue
                             }
+
+                            val beforeStyling = m.groupValues[1]
+                            val afterStyling = m.groupValues[3]
+
+                            // Extract just styling and token from the lore line.
+                            val tokenOnly = MineDown("$beforeStyling%$key%$afterStyling").replaceFirst(true)
+
+                            // Template line is more complex, replace line with first replacement
+                            // then append rest, including any styling surrounding the token.
+                            val first = multi.first()
+                            finalLore += md.copy().apply { replace(key, first) }.toComponent()
+                            val rest = multi.drop(1)
+                            finalLore += rest.map { tokenOnly.copy().apply { replace(key, it) }.toComponent() }
+
                             continue
                         }
+
                         // Key is not a multiline replacement -> apply normal single-line replacements
                         val md = md.copy().apply { loreSingleLineRepls.forEach { (k, v) -> replace(k, v) } }
                         finalLore += md.toComponent()
@@ -116,8 +124,8 @@ class WidgetRenderer(
                     }
                 })
                 stack[DataComponents.LORE] = ItemLore(finalLore.filterNot { it.isEmpty() }.map { line ->
-                    line.toText().copy().withStyle {
-                        it.withColor(CommonColors.WHITE).withItalic(false)
+                    line.colorIfAbsent(NamedTextColor.GRAY).toText().copy().withStyle {
+                        it.withItalic(false)
                     }
                 })
                 stack

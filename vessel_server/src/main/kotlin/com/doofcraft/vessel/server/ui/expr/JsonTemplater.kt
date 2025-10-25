@@ -35,8 +35,8 @@ object JsonTemplater {
         return map.mapValues { (_, v) -> templatize(v, engine, scope) }
     }
 
-    fun templatizeMap(map: Map<String, String>, engine: ExprEngine, scope: Scope): Map<String, Any?> {
+    fun templatizeMap(map: Map<String, JsonElement>, engine: ExprEngine, scope: Scope): Map<String, Any?> {
         return map.mapKeys { (k, _) -> engine.renderTemplate(k, scope) }
-            .mapValues { (_, v) -> templatizeString(v, engine, scope) }
+            .mapValues { (_, v) -> templatize(v, engine, scope) }
     }
 }

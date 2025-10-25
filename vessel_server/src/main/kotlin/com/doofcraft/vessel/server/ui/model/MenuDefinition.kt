@@ -98,5 +98,5 @@ data class IconReplacements(
 
 @Serializable
 data class ActionDef(
-    val run: String, val args: Map<String, String>? = null
+    val run: String, val args: Map<String, JsonElement>? = null
 )

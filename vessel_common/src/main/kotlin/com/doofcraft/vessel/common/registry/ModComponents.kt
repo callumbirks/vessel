@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.common.registry
 
+import com.doofcraft.vessel.common.component.BlockShapeComponent
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.component.VesselTag
 import net.minecraft.core.Registry
@@ -18,5 +19,10 @@ object ModComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataCompon
         "menu_button", DataComponentType.builder<MenuButton>().persistent(
             MenuButton.CODEC
         ).build()
+    )
+
+    @JvmField
+    val BLOCK_SHAPE: DataComponentType<BlockShapeComponent> = create(
+        "block_shape", DataComponentType.builder<BlockShapeComponent>().persistent(BlockShapeComponent.CODEC).build()
     )
 }

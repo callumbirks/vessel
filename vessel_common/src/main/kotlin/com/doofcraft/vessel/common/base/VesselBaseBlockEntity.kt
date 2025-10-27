@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.common.base
 
 import com.doofcraft.vessel.common.registry.ModBlockEntities
+import com.doofcraft.vessel.common.registry.ModComponents
 import net.minecraft.core.BlockPos
 import net.minecraft.core.HolderLookup
 import net.minecraft.core.component.DataComponentType
@@ -12,12 +13,15 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.phys.shapes.Shapes
+import net.minecraft.world.phys.shapes.VoxelShape
 
 class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBlockEntities.VESSEL, pos, state) {
     var item: ItemStack = ItemStack.EMPTY
         private set
 
     var yaw: Float = 0f
+    var shape: VoxelShape? = null
 
     fun isInitialized(): Boolean = !item.isEmpty
 
@@ -27,6 +31,12 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         }
         this.item = item.copyWithCount(1)
         this.yaw = yaw
+
+        val shape = this.item.get(ModComponents.BLOCK_SHAPE)
+        if (shape != null) {
+            this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
+        }
+
         setChangedAndSync()
     }
 
@@ -51,12 +61,19 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
      */
     fun setItemChanged() {
         item = item.copyWithCount(1)
-        setChangedAndSync()
+        if (level?.isLoaded(blockPos) == true) {
+            setChangedAndSync()
+        }
     }
 
     override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
         item = tag.getCompound("item").let { ItemStack.parse(registries, it).orElse(ItemStack.EMPTY) }
         yaw = tag.getFloat("yaw")
+        val shape = item.get(ModComponents.BLOCK_SHAPE)
+        if (shape != null) {
+            this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
+            setChangedAndSync()
+        }
     }
 
     override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {

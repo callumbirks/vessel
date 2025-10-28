@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api
+package com.doofcraft.vessel.server.api.collections
 
 import com.mojang.serialization.Codec
 import net.minecraft.util.StringRepresentable

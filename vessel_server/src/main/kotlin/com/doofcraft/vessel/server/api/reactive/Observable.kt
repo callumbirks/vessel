@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.api.reactive
 
-import com.doofcraft.vessel.server.api.Priority
+import com.doofcraft.vessel.server.api.collections.Priority
 import com.doofcraft.vessel.server.api.reactive.pipes.EmitWhileTransform
 import com.doofcraft.vessel.server.api.reactive.pipes.FilterTransform
 import com.doofcraft.vessel.server.api.reactive.pipes.IgnoreFirstTransform

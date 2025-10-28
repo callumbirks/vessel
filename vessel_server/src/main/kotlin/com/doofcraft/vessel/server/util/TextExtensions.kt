@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.util
 
-import com.doofcraft.vessel.server.serialization.TextComponentSerializer
+import com.doofcraft.vessel.server.ui.text.TextComponentSerializer
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.Component as AdvComponent

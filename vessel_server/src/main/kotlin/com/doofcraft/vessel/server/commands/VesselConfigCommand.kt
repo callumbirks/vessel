@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.commands
 
-import com.doofcraft.vessel.server.VesselDataProvider
+import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
@@ -12,29 +12,30 @@ import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.ResourceLocationArgument
 import java.util.concurrent.CompletableFuture
 
-object VesselDataCommand {
+object VesselConfigCommand {
     val COMMAND: LiteralArgumentBuilder<CommandSourceStack> = Commands.literal("vessel").then(
-        Commands.literal("data").then(
+        Commands.literal("config").then(
             Commands.literal("reload").then(
                 Commands.argument("identifier", ResourceLocationArgument.id())
-                    .suggests(::registryIdSuggestions)
+                    .suggests(::configIdSuggestions)
                     .executes(::runReload)
             )
         )
     )
 
     private fun runReload(context: CommandContext<CommandSourceStack>): Int {
-        val registryId = ResourceLocationArgument.getId(context, "identifier")
-        val registry = VesselDataProvider.getRegistry(registryId) ?: run {
-            context.source.sendFailure(Component.text("No such data registry '$registryId'."))
+        val configId = ResourceLocationArgument.getId(context, "identifier")
+        val result = VesselConfigRegistry.reload(configId)
+        if (result) {
+            context.source.sendSuccess(Component.text("Config '$configId' reloaded."), true)
+            return 0
+        } else {
+            context.source.sendFailure(Component.text("No such config '$configId'."))
             return -1
         }
-        registry.reload()
-        context.source.sendSuccess(Component.text("Reloaded data registry '$registryId'."), true)
-        return 0
     }
 
-    private fun registryIdSuggestions(
+    private fun configIdSuggestions(
         context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions> {
         val input: String = try {
@@ -43,9 +44,10 @@ object VesselDataCommand {
             ""
         }
 
-        VesselDataProvider.allRegistries().map { it.id.toString() }.filter { it.contains(input) }.forEach {
-            builder.suggest(it)
-        }
+        VesselConfigRegistry.configIds()
+            .map { it.toString() }
+            .filter { it.contains(input) }
+            .forEach { builder.suggest(it) }
 
         return builder.buildFuture()
     }

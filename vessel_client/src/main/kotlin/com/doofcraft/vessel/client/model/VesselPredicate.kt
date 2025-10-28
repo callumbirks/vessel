@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.client.model
 
-import com.doofcraft.vessel.client.serialization.ResourceLocationSerializer
+import com.doofcraft.vessel.common.serialization.ResourceLocationSerializer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
 import kotlinx.serialization.Contextual

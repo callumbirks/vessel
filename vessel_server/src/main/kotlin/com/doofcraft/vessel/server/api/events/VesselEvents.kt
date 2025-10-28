@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.server.api.events
 
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
+import com.doofcraft.vessel.server.api.events.config.ConfigsLoadedEvent
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuClosedEvent
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuOpenedEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityLoadEvent
@@ -26,6 +27,9 @@ object VesselEvents {
 
     @JvmField
     val CONTAINER_MENU_CLOSED = SimpleObservable<ContainerMenuClosedEvent>()
+
+    @JvmField
+    val CONFIGS_LOADED = SimpleObservable<ConfigsLoadedEvent>()
 
     fun register() {
         ServerBlockEntityEvents.BLOCK_ENTITY_UNLOAD.register { blockEntity, level ->

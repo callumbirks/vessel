@@ -13,19 +13,27 @@ object VesselConfigRegistry {
         factories[factory.id] = factory
     }
 
-    fun reloadAll() {
+    fun initialReload() {
+        if (configsLoaded) return
+        for ((id, factory) in factories) {
+            factory.reload()
+        }
         if (!configsLoaded) {
             VesselEvents.CONFIGS_LOADED.emit(ConfigsLoadedEvent(factories.keys.toList()))
         }
         configsLoaded = true
+    }
+
+    fun initialValidate() {
         for ((id, factory) in factories) {
-            factory.reload()
+            factory.validate()
         }
     }
 
     fun reload(id: ResourceLocation): Boolean {
         val factory = factories[id] ?: return false
         factory.reload()
+        factory.validate()
         return true
     }
 

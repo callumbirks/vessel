@@ -9,7 +9,6 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import net.minecraft.resources.ResourceLocation
 import java.io.File
-import java.util.concurrent.Executors
 
 interface ConfigFactory<T> {
     val id: ResourceLocation
@@ -35,12 +34,9 @@ interface ConfigFactory<T> {
             try {
                 configFile.inputStream().use { stream ->
                     config = json.decodeFromStream(serializer, stream)
-                    validate(config).then(
-                        onSuccess = { VesselMod.LOGGER.info("Validated $id config successfully.") },
-                        onFailure = { VesselMod.LOGGER.warn("Failed to validate $id config: $it") })
                 }
             } catch (e: Exception) {
-                VesselMod.LOGGER.error("Error reading $id config: ${e.message}")
+                VesselMod.LOGGER.error("Error reading $id config: ${e.message}", e)
                 config = default()
             }
         } else {
@@ -51,5 +47,11 @@ interface ConfigFactory<T> {
 
         CONFIG = config
         reload(CONFIG)
+    }
+
+    fun validate() {
+        validate(CONFIG).then(
+            onSuccess = { VesselMod.LOGGER.info("Validated $id config successfully.") },
+            onFailure = { VesselMod.LOGGER.warn("Failed to validate $id config: $it") })
     }
 }

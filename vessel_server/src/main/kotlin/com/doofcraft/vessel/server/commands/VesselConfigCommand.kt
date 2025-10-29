@@ -1,15 +1,14 @@
 package com.doofcraft.vessel.server.commands
 
 import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
-import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import net.kyori.adventure.text.Component
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.ResourceLocationArgument
+import net.minecraft.network.chat.Component
 import java.util.concurrent.CompletableFuture
 
 object VesselConfigCommand {
@@ -27,10 +26,10 @@ object VesselConfigCommand {
         val configId = ResourceLocationArgument.getId(context, "identifier")
         val result = VesselConfigRegistry.reload(configId)
         if (result) {
-            context.source.sendSuccess(Component.text("Config '$configId' reloaded."), true)
+            context.source.sendSuccess({ Component.literal("Config '$configId' reloaded.") }, true)
             return 0
         } else {
-            context.source.sendFailure(Component.text("No such config '$configId'."))
+            context.source.sendFailure(Component.literal("No such config '$configId'."))
             return -1
         }
     }
@@ -39,7 +38,8 @@ object VesselConfigCommand {
         context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions> {
         val input: String = try {
-            StringArgumentType.getString(context, "identifier")
+            val id = ResourceLocationArgument.getId(context, "identifier")
+            id.toString().replaceFirst("minecraft:", "")
         } catch (_: Exception) {
             ""
         }

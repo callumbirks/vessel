@@ -1,15 +1,14 @@
 package com.doofcraft.vessel.server.commands
 
 import com.doofcraft.vessel.server.VesselDataProvider
-import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import net.kyori.adventure.text.Component
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.arguments.ResourceLocationArgument
+import net.minecraft.network.chat.Component
 import java.util.concurrent.CompletableFuture
 
 object VesselDataCommand {
@@ -26,11 +25,11 @@ object VesselDataCommand {
     private fun runReload(context: CommandContext<CommandSourceStack>): Int {
         val registryId = ResourceLocationArgument.getId(context, "identifier")
         val registry = VesselDataProvider.getRegistry(registryId) ?: run {
-            context.source.sendFailure(Component.text("No such data registry '$registryId'."))
+            context.source.sendFailure(Component.literal("No such data registry '$registryId'."))
             return -1
         }
         registry.reload()
-        context.source.sendSuccess(Component.text("Reloaded data registry '$registryId'."), true)
+        context.source.sendSuccess({ Component.literal("Reloaded data registry '$registryId'.") }, true)
         return 0
     }
 
@@ -38,7 +37,8 @@ object VesselDataCommand {
         context: CommandContext<CommandSourceStack>, builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions> {
         val input: String = try {
-            StringArgumentType.getString(context, "identifier")
+            val id = ResourceLocationArgument.getId(context, "identifier")
+            id.toString().replaceFirst("minecraft:", "")
         } catch (_: Exception) {
             ""
         }

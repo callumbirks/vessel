@@ -1,5 +1,7 @@
 package com.doofcraft.vessel.server.mixin;
 
+import com.doofcraft.vessel.common.component.ConsumableComponent;
+import com.doofcraft.vessel.common.registry.ModComponents;
 import com.doofcraft.vessel.server.api.VesselRegistry;
 import com.doofcraft.vessel.common.api.item.VesselItem;
 import com.doofcraft.vessel.common.component.VesselTag;
@@ -28,6 +30,11 @@ public class ItemMixin {
         ItemStack stack = player.getItemInHand(usedHand);
         VesselTag tag = stack.get(VesselTag.Companion.getCOMPONENT());
         if (tag == null) return;
+
+        // Consumables functionality will be in 'finishUsingItem', and we need the VesselBaseItem.use() to be called, so skip any logic here.
+        ConsumableComponent consumable = stack.get(ModComponents.CONSUMABLE);
+        if (consumable != null) return;
+
         VesselItem item = VesselRegistry.INSTANCE.getItem(tag.key);
         if (item == null) return;
 

@@ -1,21 +1,21 @@
 package com.doofcraft.vessel.common.api.item
 
+import com.doofcraft.vessel.common.component.ConsumableComponent
 import com.doofcraft.vessel.common.component.VesselTag
-import net.minecraft.core.component.DataComponents
+import com.doofcraft.vessel.common.registry.ModComponents
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResultHolder
-import net.minecraft.world.food.FoodProperties
-import net.minecraft.world.food.Foods
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.UseAnim
 
-abstract class VesselFood(tag: VesselTag, food: FoodProperties = Foods.BREAD): VesselItem(tag) {
+abstract class VesselConsumable(tag: VesselTag, animation: UseAnim, duration: Int = 32): VesselItem(tag) {
     init {
-        addComponent(DataComponents.FOOD) { food }
+        addComponent(ModComponents.CONSUMABLE) { ConsumableComponent(animation, duration) }
     }
 
-    // `use` cannot be used on Foods, because we will defer to the Minecraft methods for consuming food.
+    // `use` cannot be used on Consumables, because we will defer to `VesselBaseConsumable.use`.
     // Extra behaviours should be added to `finishUsing`.
     final override fun use(
         stack: ItemStack,

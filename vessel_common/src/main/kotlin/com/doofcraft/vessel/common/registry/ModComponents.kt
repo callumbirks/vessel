@@ -7,6 +7,7 @@ import com.doofcraft.vessel.common.component.VesselTag
 import net.minecraft.core.Registry
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.network.codec.StreamCodec
 
 object ModComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataComponentType<*>>() {
     override val registry: Registry<DataComponentType<*>> = BuiltInRegistries.DATA_COMPONENT_TYPE
@@ -15,11 +16,11 @@ object ModComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataCompon
     val VESSEL_TAG: DataComponentType<VesselTag> =
         create("tag", DataComponentType.builder<VesselTag>().persistent(VesselTag.CODEC).build())
 
+    // MenuButton data is not persisted, as items only live in temporary UI not permanent storage.
     @JvmField
     val MENU_BUTTON: DataComponentType<MenuButton> = create(
-        "menu_button", DataComponentType.builder<MenuButton>().persistent(
-            MenuButton.CODEC
-        ).build()
+        "menu_button",
+        DataComponentType.builder<MenuButton>().networkSynchronized(MenuButton.NOOP_CODEC).build()
     )
 
     @JvmField

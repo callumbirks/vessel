@@ -35,6 +35,7 @@ subprojects {
         maven { url "https://maven.parchmentmc.org" }
         // for MineDown:
         maven { url "https://repo.minebench.de" }
+        maven { url "https://api.modrinth.com/maven" }
     }
 
     configurations {

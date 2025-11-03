@@ -23,6 +23,8 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     implementation(project(path: ":vessel_common", configuration: "namedElements"))
+
+    modImplementation "maven.modrinth:jade:${project.jade_version}"
 }
 
 loom {

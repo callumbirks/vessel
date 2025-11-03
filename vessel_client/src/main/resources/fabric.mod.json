@@ -20,6 +20,12 @@
                 "value": "com.doofcraft.vessel.client.VesselClient",
                 "adapter": "kotlin"
             }
+        ],
+        "jade": [
+            {
+                "value": "com.doofcraft.vessel.client.plugin.ClientJadePlugin",
+                "adapter": "kotlin"
+            }
         ]
     },
     "mixins": [

@@ -142,34 +142,42 @@ class WidgetRenderer(
         def.widgets.forEach { w ->
             when (w) {
                 is WidgetDef.Button -> {
+                    val scope =
+                        w.value?.let { val value = engine.eval(it, scopeBase); scopeBase.copy(value = value) }
+                            ?: scopeBase
+
                     val hidden = w.hideIf?.let {
-                        val result = engine.eval(it, scopeBase)
+                        val result = engine.eval(it, scope)
                         result != 0 && result != false
                     } ?: false
                     if (hidden) return@forEach
 
                     val enabled = w.enabledIf?.let {
-                        val result = engine.eval(it, scopeBase)
+                        val result = engine.eval(it, scope)
                         result != 0 && result != false
                     } ?: true
 
-                    val stack = renderIcon(w.icon, scopeBase, player)
+                    val stack = renderIcon(w.icon, scope, player)
                     val button = if (enabled) w.onClick?.let { act ->
                         MenuButton(cmd = act.run, args = act.args?.let { args ->
-                            JsonTemplater.templatizeMap(args, engine, scopeBase).mapValues { it.value ?: "" }
+                            JsonTemplater.templatizeMap(args, engine, scope).mapValues { it.value ?: "" }
                         } ?: emptyMap())
                     } else null
                     out[w.slot] = if (button != null) stack.withButton(button) else stack
                 }
 
                 is WidgetDef.Label -> {
+                    val scope =
+                        w.value?.let { val value = engine.eval(it, scopeBase); scopeBase.copy(value = value) }
+                            ?: scopeBase
+
                     val hidden = w.hideIf?.let {
-                        val result = engine.eval(it, scopeBase)
+                        val result = engine.eval(it, scope)
                         result != 0 && result != false
                     } ?: false
                     if (hidden) return@forEach
 
-                    val stack = renderIcon(w.icon, scopeBase, player)
+                    val stack = renderIcon(w.icon, scope, player)
                     out[w.slot] = stack
                 }
 

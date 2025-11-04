@@ -47,6 +47,7 @@ sealed class WidgetDef {
         override val type: String = "button",
         val slot: Int,
         val icon: IconDef,
+        val value: String? = null,
         @SerialName("hide_if") val hideIf: String? = null,
         @SerialName("enabled_if") val enabledIf: String? = null,
         @SerialName("on_click") val onClick: ActionDef? = null
@@ -58,6 +59,7 @@ sealed class WidgetDef {
         override val type: String = "label",
         val slot: Int,
         val icon: IconDef,
+        val value: String? = null,
         @SerialName("hide_if") val hideIf: String? = null,
     ) : WidgetDef()
 

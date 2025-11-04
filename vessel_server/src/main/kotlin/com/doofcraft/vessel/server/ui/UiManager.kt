@@ -49,8 +49,12 @@ object UiManager {
         }
     }
 
-    fun open(menu: String, player: ServerPlayer, params: Map<String, Any?>) {
-        val menu = MenuRegistry.getOrThrow(menu)
+    fun open(menuName: String, player: ServerPlayer, params: Map<String, Any?>) {
+        val menu = MenuRegistry.get(menuName)
+        if (menu == null) {
+            VesselMod.LOGGER.error("Failed to open menu. No such menu '$menuName'")
+            return
+        }
         service.openMenu(player, menu, params)
     }
 }

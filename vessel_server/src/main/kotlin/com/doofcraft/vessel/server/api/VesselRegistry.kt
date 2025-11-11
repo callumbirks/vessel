@@ -18,12 +18,16 @@ object VesselRegistry {
     @JvmStatic
     fun getBlock(key: String): VesselBlock? = blocks[key]
 
+    inline fun <reified T: VesselBlock> getBlock(key: String): T? = getBlock(key) as? T
+
     @JvmStatic
     fun getBlockOrThrow(key: String): VesselBlock =
         blocks[key] ?: throw NoSuchElementException("No such VesselBlock '$key'")
 
     @JvmStatic
     fun getItem(key: String): VesselItem? = items[key]
+
+    inline fun <reified T: VesselItem> getItem(key: String): T? = getItem(key) as? T
 
     @JvmStatic
     fun getItemOrThrow(key: String): VesselItem =

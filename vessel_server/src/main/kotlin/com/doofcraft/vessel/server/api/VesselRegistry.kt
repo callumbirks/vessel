@@ -18,7 +18,7 @@ object VesselRegistry {
     @JvmStatic
     fun getBlock(key: String): VesselBlock? = blocks[key]
 
-    inline fun <reified T: VesselBlock> getBlock(key: String): T? = getBlock(key) as? T
+    inline fun <reified T: VesselBlock> getBlockOfType(key: String): T? = getBlock(key) as? T
 
     @JvmStatic
     fun getBlockOrThrow(key: String): VesselBlock =
@@ -27,7 +27,7 @@ object VesselRegistry {
     @JvmStatic
     fun getItem(key: String): VesselItem? = items[key]
 
-    inline fun <reified T: VesselItem> getItem(key: String): T? = getItem(key) as? T
+    inline fun <reified T: VesselItem> getItemOfType(key: String): T? = getItem(key) as? T
 
     @JvmStatic
     fun getItemOrThrow(key: String): VesselItem =

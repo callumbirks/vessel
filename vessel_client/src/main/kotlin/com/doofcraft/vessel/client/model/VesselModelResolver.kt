@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.client.model
 
 import com.doofcraft.vessel.client.serialization.vesselSerializationModule
+import com.doofcraft.vessel.common.VesselMod
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream

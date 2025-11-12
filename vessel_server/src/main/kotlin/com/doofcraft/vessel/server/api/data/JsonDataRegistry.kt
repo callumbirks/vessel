@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.api.data
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.server.api.reactive.SimpleObservable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -32,7 +33,7 @@ interface JsonDataRegistry<T> {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    fun parse(stream: InputStream, identifier: ResourceLocation): T {
+    private fun parse(stream: InputStream, identifier: ResourceLocation): T {
         return try {
             json.decodeFromStream(serializer, stream)
         } catch (exception: Exception) {

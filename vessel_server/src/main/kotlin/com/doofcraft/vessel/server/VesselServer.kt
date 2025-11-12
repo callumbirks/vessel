@@ -1,13 +1,17 @@
 package com.doofcraft.vessel.server
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import com.doofcraft.vessel.common.registry.ModBlocks
 import com.doofcraft.vessel.common.registry.ModComponents
 import com.doofcraft.vessel.common.registry.ModItems
+import com.doofcraft.vessel.common.registry.VesselPackets
 import com.doofcraft.vessel.server.api.VesselRegistry
+import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
 import com.doofcraft.vessel.server.api.events.VesselEvents
+import com.doofcraft.vessel.server.tooltip.TooltipConfig
 import com.doofcraft.vessel.server.ui.UiManager
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
@@ -29,6 +33,7 @@ object VesselServer: DedicatedServerModInitializer {
     override fun onInitializeServer() {
         ServerLifecycleEvents.SERVER_STARTING.register { server ->
             this.server = server
+            VesselMod.setServer(server)
             lateInitialize()
         }
 
@@ -40,10 +45,12 @@ object VesselServer: DedicatedServerModInitializer {
         ModItems.register()
         ModBlocks.register()
         ModBlockEntities.register()
+        VesselPackets.register()
         UseBlockCallback.EVENT.register(::useBlock)
         UiManager.register()
         VesselDataProvider.registerDefaults()
         VesselEvents.register()
+        VesselConfigRegistry.register(TooltipConfig)
     }
 
     // Stuff that needs to run after all mods have been loaded and initialized.

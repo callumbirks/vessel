@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.client.model
 
-import VesselMod
+import com.doofcraft.vessel.common.VesselMod
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

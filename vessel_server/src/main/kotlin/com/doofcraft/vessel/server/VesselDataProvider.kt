@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server
 
-import VesselMod.LOGGER
+import com.doofcraft.vessel.common.VesselMod.LOGGER
 import com.doofcraft.vessel.server.api.data.JsonDataRegistry
 import com.doofcraft.vessel.server.ui.MenuRegistry
 import net.minecraft.resources.ResourceLocation

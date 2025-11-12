@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.api
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.api.item.ItemStackFactory
 import com.doofcraft.vessel.common.api.item.VanillaItemFactory
 import com.doofcraft.vessel.common.api.VesselIdentifier

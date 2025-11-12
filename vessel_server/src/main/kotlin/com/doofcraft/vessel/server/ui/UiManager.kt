@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.commands.*

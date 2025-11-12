@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.common.api
 
+import com.doofcraft.vessel.common.VesselMod
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind

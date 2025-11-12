@@ -2,6 +2,8 @@ package com.doofcraft.vessel.common.base
 
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.tooltip.TooltipRegistry
+import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResultHolder
 import net.minecraft.world.entity.LivingEntity
@@ -9,6 +11,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemUtils
+import net.minecraft.world.item.TooltipFlag
 import net.minecraft.world.item.UseAnim
 import net.minecraft.world.level.Level
 
@@ -37,5 +40,16 @@ open class VesselBaseItem(): Item(Properties()) {
         } else {
             super.use(level, player, usedHand)
         }
+    }
+
+    override fun appendHoverText(
+        stack: ItemStack,
+        context: TooltipContext,
+        tooltipComponents: MutableList<Component?>,
+        tooltipFlag: TooltipFlag
+    ) {
+        val tag = stack.get(VesselTag.COMPONENT) ?: return
+        val tooltips = TooltipRegistry.getTooltip(tag.key) ?: return
+        tooltipComponents.addAll(tooltips)
     }
 }

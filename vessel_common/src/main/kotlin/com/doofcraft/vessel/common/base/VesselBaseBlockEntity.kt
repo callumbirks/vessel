@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.common.base
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import com.doofcraft.vessel.common.registry.ModComponents
 import net.minecraft.core.BlockPos

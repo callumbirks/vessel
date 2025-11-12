@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui.render
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.server.ui.expr.Scope
 import net.minecraft.core.component.DataComponents

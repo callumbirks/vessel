@@ -57,6 +57,8 @@ object VesselServer: DedicatedServerModInitializer {
         UiManager.register(VesselAsync.Scope)
         VesselDataProvider.registerDefaults()
         VesselEvents.register()
+
+        VesselConfigRegistry.register(VesselConfig)
         VesselConfigRegistry.register(TooltipConfig)
     }
 

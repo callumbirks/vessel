@@ -11,6 +11,8 @@ import com.doofcraft.vessel.common.registry.VesselPackets
 import com.doofcraft.vessel.server.api.VesselRegistry
 import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
 import com.doofcraft.vessel.server.api.events.VesselEvents
+import com.doofcraft.vessel.server.api.async.VesselAsync
+import com.doofcraft.vessel.server.api.redis.RedisThreadedConnection
 import com.doofcraft.vessel.server.tooltip.TooltipConfig
 import com.doofcraft.vessel.server.ui.UiManager
 import net.fabricmc.api.DedicatedServerModInitializer
@@ -37,6 +39,11 @@ object VesselServer: DedicatedServerModInitializer {
             lateInitialize()
         }
 
+        ServerLifecycleEvents.SERVER_STOPPED.register { server ->
+            VesselAsync.shutdown()
+            RedisThreadedConnection.shutdown()
+        }
+
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             ModCommands.register(dispatcher)
         }
@@ -47,7 +54,7 @@ object VesselServer: DedicatedServerModInitializer {
         ModBlockEntities.register()
         VesselPackets.register()
         UseBlockCallback.EVENT.register(::useBlock)
-        UiManager.register()
+        UiManager.register(VesselAsync.Scope)
         VesselDataProvider.registerDefaults()
         VesselEvents.register()
         VesselConfigRegistry.register(TooltipConfig)

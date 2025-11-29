@@ -34,7 +34,7 @@ object UiManager {
 
     private val BUILTIN_COMP_MAPPERS = listOf(PlayerHeadUiComponentMapper)
 
-    fun register(scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)) {
+    fun register(scope: CoroutineScope) {
         BUILTIN_COMMANDS.forEach(CommandBus::register)
         BUILTIN_COMP_MAPPERS.forEach(UiComponentMappers::register)
 

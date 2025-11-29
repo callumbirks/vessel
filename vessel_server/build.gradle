@@ -28,6 +28,9 @@ dependencies {
     transitiveInclude(implementation "de.themoep:minedown-adventure:${project.minedown_version}")
     modImplementation "net.kyori:adventure-platform-fabric:${project.adventure_fabric_version}"
 
+    // Redis
+    transitiveInclude(implementation("io.lettuce:lettuce-core:${project.lettuce_version}"))
+
     configurations.transitiveInclude.resolvedConfiguration.resolvedArtifacts.forEach {
         include(it.moduleVersion.id.toString())
     }

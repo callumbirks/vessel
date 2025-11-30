@@ -1,36 +1,35 @@
 {
-	"schemaVersion": 1,
-	"id": "vessel_server",
-	"version": "${version}",
-	"name": "Vessel Server",
-	"description": "A dynamic item registry system designed for servers with server-only logic",
-	"authors": [
-		"callumbirks"
-	],
-	"contact": {
-		"homepage": "https://doofcraft.com/",
-		"sources": "https://github.com/callumbirks/vessel"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/vessel/icon.png",
-	"environment": "*",
-	"entrypoints": {
-        "server": [
-            {
-                "value": "com.doofcraft.vessel.server.VesselServer",
-                "adapter": "kotlin"
-            }
-        ]
-	},
-	"mixins": [
-        "vessel.mixins.json"
-	],
-    "accessWidener": "vessel.accesswidener",
-	"depends": {
-		"fabricloader": ">=0.16.14",
-		"minecraft": "~1.21.1",
-		"java": ">=21",
-		"fabric-api": "*",
-		"fabric-language-kotlin": "*"
-	}
+  "schemaVersion": 1,
+  "id": "vessel_server",
+  "version": "${version}",
+  "name": "Vessel Server",
+  "description": "A kitchen-sink utility mod for servers with server-only features.",
+  "authors": [
+    "Callum Birks"
+  ],
+  "contact": {
+    "homepage": "https://doofcraft.com/"
+  },
+  "license": "ARR",
+  "icon": "assets/vessel/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "server": [
+      {
+        "value": "com.doofcraft.vessel.server.VesselServer",
+        "adapter": "kotlin"
+      }
+    ]
+  },
+  "mixins": [
+    "vessel.mixins.json"
+  ],
+  "accessWidener": "vessel.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "fabric-language-kotlin": "*"
+  }
 }

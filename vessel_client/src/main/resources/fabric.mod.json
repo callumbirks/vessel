@@ -1,42 +1,41 @@
 {
-    "schemaVersion": 1,
-    "id": "vessel_client",
-    "version": "${version}",
-    "name": "Vessel Client",
-    "description": "A dynamic item registry system designed for servers with server-only logic",
-    "authors": [
-        "callumbirks"
+  "schemaVersion": 1,
+  "id": "vessel_client",
+  "version": "${version}",
+  "name": "Vessel Client",
+  "description": "A kitchen-sink utility mod for servers with server-only features.",
+  "authors": [
+    "Callum Birks"
+  ],
+  "contact": {
+    "homepage": "https://doofcraft.com/"
+  },
+  "license": "ARR",
+  "icon": "assets/vessel/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      {
+        "value": "com.doofcraft.vessel.client.VesselClient",
+        "adapter": "kotlin"
+      }
     ],
-    "contact": {
-        "homepage": "https://doofcraft.com/",
-        "sources": "https://github.com/callumbirks/vessel"
-    },
-    "license": "CC0-1.0",
-    "icon": "assets/vessel/icon.png",
-    "environment": "*",
-    "entrypoints": {
-        "client": [
-            {
-                "value": "com.doofcraft.vessel.client.VesselClient",
-                "adapter": "kotlin"
-            }
-        ],
-        "jade": [
-            {
-                "value": "com.doofcraft.vessel.client.plugin.ClientJadePlugin",
-                "adapter": "kotlin"
-            }
-        ]
-    },
-    "mixins": [
-        "vessel.mixins.json"
-    ],
-    "accessWidener": "vessel.accesswidener",
-    "depends": {
-        "fabricloader": ">=0.16.14",
-        "minecraft": "~1.21.1",
-        "java": ">=21",
-        "fabric-api": "*",
-        "fabric-language-kotlin": "*"
-    }
+    "jade": [
+      {
+        "value": "com.doofcraft.vessel.client.plugin.ClientJadePlugin",
+        "adapter": "kotlin"
+      }
+    ]
+  },
+  "mixins": [
+    "vessel.mixins.json"
+  ],
+  "accessWidener": "vessel.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.16.14",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "fabric-language-kotlin": "*"
+  }
 }

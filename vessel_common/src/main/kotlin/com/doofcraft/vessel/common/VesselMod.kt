@@ -10,6 +10,12 @@ object VesselMod {
     var server: MinecraftServer? = null
         private set
 
+    val isServer
+        get() = server != null
+
+    val isClient
+        get() = server == null
+
     fun setServer(server: MinecraftServer) {
         require(this.server == null) { "VesselMod.server has been set more than once!" }
         this.server = server

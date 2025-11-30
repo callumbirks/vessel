@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 object VesselAsync {
@@ -57,8 +58,9 @@ object VesselAsync {
                     }
                     return@launch
                 }
-                block()
+                delay(50.milliseconds)
             }
+            block()
         }
     }
 

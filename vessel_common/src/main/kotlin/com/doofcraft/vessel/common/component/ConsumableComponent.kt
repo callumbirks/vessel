@@ -48,16 +48,3 @@ data class ConsumableComponent(
         }
     }
 }
-
-//public enum UseAnim {
-//    NONE,
-//    EAT,
-//    DRINK,
-//    BLOCK,
-//    BOW,
-//    SPEAR,
-//    CROSSBOW,
-//    SPYGLASS,
-//    TOOT_HORN,
-//    BRUSH;
-//}

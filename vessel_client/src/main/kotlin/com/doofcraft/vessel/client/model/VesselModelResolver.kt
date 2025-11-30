@@ -21,7 +21,7 @@ object VesselModelResolver: ModelResolver {
         if (context.id().namespace != VesselMod.MODID) return null
         VesselMod.LOGGER.info("Resolving model {}", context.id())
         when (context.id().path) {
-            "item/item", "block/block", "item/block_item" -> {}
+            "item/item", "block/block", "item/block_item", "item/tool" -> {}
             else -> return null
         }
         val rm = Minecraft.getInstance().resourceManager

@@ -3,11 +3,11 @@ package com.doofcraft.vessel.common.registry
 import com.doofcraft.vessel.common.component.BlockShapeComponent
 import com.doofcraft.vessel.common.component.ConsumableComponent
 import com.doofcraft.vessel.common.component.MenuButton
+import com.doofcraft.vessel.common.component.IngredientComponent
 import com.doofcraft.vessel.common.component.VesselTag
 import net.minecraft.core.Registry
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.network.codec.StreamCodec
 
 object ModComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataComponentType<*>>() {
     override val registry: Registry<DataComponentType<*>> = BuiltInRegistries.DATA_COMPONENT_TYPE
@@ -31,5 +31,10 @@ object ModComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataCompon
     @JvmField
     val CONSUMABLE: DataComponentType<ConsumableComponent> = create(
         "item_use", DataComponentType.builder<ConsumableComponent>().persistent(ConsumableComponent.CODEC).build()
+    )
+
+    @JvmField
+    val INGREDIENT: DataComponentType<IngredientComponent> = create(
+        "ingredient", DataComponentType.builder<IngredientComponent>().persistent(IngredientComponent.CODEC).build()
     )
 }

@@ -3,7 +3,7 @@
   "id": "vessel_client",
   "version": "${version}",
   "name": "Vessel Client",
-  "description": "A kitchen-sink utility mod for servers with server-only features.",
+  "description": "A kitchen-sink utility mod for servers with server-only features. Built for the Doofcraft Cobblemon server.",
   "authors": [
     "Callum Birks"
   ],

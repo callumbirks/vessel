@@ -24,5 +24,6 @@ abstract class VesselTool(
         addComponent(DataComponents.TOOL) { tier.createToolProperties(blocks) }
         addComponent(DataComponents.ATTRIBUTE_MODIFIERS) { modifiers }
         addComponent(ModComponents.INGREDIENT) { IngredientComponent(tier.repairIngredient) }
+        addComponent(DataComponents.MAX_DAMAGE) { 100 }
     }
 }

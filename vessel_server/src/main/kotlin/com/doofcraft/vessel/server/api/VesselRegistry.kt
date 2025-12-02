@@ -70,7 +70,7 @@ object VesselRegistry {
 
     fun find(key: VesselIdentifier): ItemStackFactory? {
         return when (key.namespace) {
-            null, VesselMod.MODID -> items[key.path] ?: blocks[key.path]
+            null, VesselMod.MODID -> items[key.path] ?: blocks[key.path] ?: tools[key.path]
             else -> BuiltInRegistries.ITEM.getHolder(key.toIdentifier())
                 .getOrNull()
                 ?.let { VanillaItemFactory(it.value()) }

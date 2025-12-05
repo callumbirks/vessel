@@ -1,18 +1,25 @@
 package com.doofcraft.vessel.common.base
 
-import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.ModBlocks
+import com.doofcraft.vessel.common.util.ItemHelpers
+import net.minecraft.network.chat.Component
 import net.minecraft.util.Mth
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.TooltipFlag
 import net.minecraft.world.item.context.BlockPlaceContext
 import net.minecraft.world.level.block.state.BlockState
 import kotlin.math.round
 
-class VesselBaseBlockItem: BlockItem(ModBlocks.VESSEL, Properties()) {
-    override fun getDescriptionId(stack: ItemStack): String {
-        val tag = stack.get(VesselTag.COMPONENT) ?: return super.getDescriptionId()
-        return "item.${tag.key}"
+class VesselBaseBlockItem : BlockItem(ModBlocks.VESSEL, Properties()) {
+    override fun getDescriptionId(stack: ItemStack): String? {
+        return ItemHelpers.getDescriptionId(stack) { super.getDescriptionId(stack) }
+    }
+
+    override fun appendHoverText(
+        stack: ItemStack, context: TooltipContext, tooltipComponents: MutableList<Component?>, tooltipFlag: TooltipFlag
+    ) {
+        return ItemHelpers.appendHoverText(stack, context, tooltipComponents, tooltipFlag)
     }
 
     override fun placeBlock(context: BlockPlaceContext, state: BlockState): Boolean {

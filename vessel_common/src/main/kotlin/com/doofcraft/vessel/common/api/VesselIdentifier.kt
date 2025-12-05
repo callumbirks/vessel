@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.common.api
 
 import com.doofcraft.vessel.common.VesselMod
+import com.mojang.serialization.Codec
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -69,6 +70,8 @@ data class VesselIdentifier(
         fun vessel(key: String): VesselIdentifier {
             return VesselIdentifier(null, key)
         }
+
+        val CODEC: Codec<VesselIdentifier> = Codec.STRING.xmap({ parse(it) }, { it.toString() })
 
         object StringSerializer : KSerializer<VesselIdentifier> {
             override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(

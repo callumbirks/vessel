@@ -11,7 +11,7 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
 
 abstract class VesselItem(tag: VesselTag): Vessel(tag) {
-    override val baseItem = ModItems.VESSEL
+    override val baseItem = ModItems.ITEM
 
     open fun use(
         stack: ItemStack, level: ServerLevel, player: ServerPlayer, hand: InteractionHand

@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.ui.handler
 
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.server.ui.UiManager
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
@@ -11,7 +11,6 @@ import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
-import kotlin.text.get
 
 class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: Inventory, inventory: Container) : ChestMenu(
     genericHandler(inventory.containerSize),
@@ -58,7 +57,7 @@ class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: In
                 }
                 // If the cursor stack is empty, this could be a button press.
                 val stack = container.getItem(slotId)
-                val buttonData = stack[ModComponents.MENU_BUTTON] ?: return
+                val buttonData = stack[StackComponents.MENU_BUTTON] ?: return
                 UiManager.service.clickButton(player as ServerPlayer, buttonData)
             }
         }

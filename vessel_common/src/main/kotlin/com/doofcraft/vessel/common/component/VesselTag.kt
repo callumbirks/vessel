@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.common.component
 
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.core.component.DataComponentType
@@ -15,6 +15,6 @@ data class VesselTag(@JvmField val key: String, @JvmField val type: String) {
         }
 
         val COMPONENT: DataComponentType<VesselTag>
-            get() = ModComponents.VESSEL_TAG
+            get() = StackComponents.VESSEL_TAG
     }
 }

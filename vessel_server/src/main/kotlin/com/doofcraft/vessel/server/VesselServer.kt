@@ -5,7 +5,7 @@ import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import com.doofcraft.vessel.common.registry.ModBlocks
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.common.registry.ModItems
 import com.doofcraft.vessel.common.registry.VesselPackets
 import com.doofcraft.vessel.server.api.VesselRegistry
@@ -48,7 +48,7 @@ object VesselServer: DedicatedServerModInitializer {
             ModCommands.register(dispatcher)
         }
 
-        ModComponents.register()
+        StackComponents.register()
         ModItems.register()
         ModBlocks.register()
         ModBlockEntities.register()

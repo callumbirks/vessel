@@ -2,7 +2,7 @@ package com.doofcraft.vessel.server.ui.render
 
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.component.MenuButton
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.server.ui.cmd.UiContext
 import com.doofcraft.vessel.server.ui.expr.ExprEngine
 import com.doofcraft.vessel.server.ui.expr.JsonTemplater
@@ -223,7 +223,7 @@ class WidgetRenderer(
     }
 
     private fun ItemStack.withButton(btn: MenuButton): ItemStack {
-        set(ModComponents.MENU_BUTTON, btn)
+        set(StackComponents.MENU_BUTTON, btn)
         return this
     }
 }

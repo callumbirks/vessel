@@ -1,11 +1,19 @@
-package com.doofcraft.vessel.client.model
+@file:UseSerializers(ResourceLocationSerializer::class)
 
-import com.doofcraft.vessel.common.serialization.ResourceLocationSerializer
+package com.doofcraft.vessel.common.predicate
+
+import com.doofcraft.vessel.common.serialization.VesselJSON
+import com.doofcraft.vessel.common.serialization.adapters.ItemHolderSerializer
+import com.doofcraft.vessel.common.serialization.adapters.ItemStackSerializer
+import com.doofcraft.vessel.common.serialization.adapters.ResourceLocationSerializer
+import com.doofcraft.vessel.common.serialization.toGsonElement
+import com.doofcraft.vessel.common.serialization.toKxElement
 import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
-import kotlinx.serialization.Contextual
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -15,14 +23,16 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.ExtraCodecs
+import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 
 @Serializable(with = VesselPredicateSerializer::class)
@@ -31,7 +41,7 @@ sealed interface VesselPredicate {
     fun componentList(): List<ResourceLocation>
 
     data class ComponentOp(
-        @Contextual val componentId: ResourceLocation, val path: String?, val op: JsonOp
+        val componentId: ResourceLocation, val path: String?, val op: JsonOp
     ) : VesselPredicate {
         val component: DataComponentType<kotlin.Any>? by lazy {
             resolveComponent(componentId)
@@ -49,6 +59,26 @@ sealed interface VesselPredicate {
         override fun componentList(): List<ResourceLocation> {
             return listOf(this.componentId)
         }
+    }
+
+    data class MatchStack(
+        val stack: ItemStack
+    ) : VesselPredicate {
+        override fun test(stack: ItemStack): Boolean {
+            return ItemStack.matches(this.stack, stack)
+        }
+
+        override fun componentList(): List<ResourceLocation> = emptyList()
+    }
+
+    data class MatchItem(
+        val item: Holder<Item>
+    ) : VesselPredicate {
+        override fun test(stack: ItemStack): Boolean {
+            return stack.itemHolder == item
+        }
+
+        override fun componentList(): List<ResourceLocation> = emptyList()
     }
 
     data class All(val children: List<VesselPredicate>) : VesselPredicate {
@@ -91,6 +121,16 @@ sealed interface VesselPredicate {
             override fun test(actual: JsonPrimitive?): Boolean = set.any { actual == it }
         }
     }
+
+    companion object {
+        val CODEC: Codec<VesselPredicate> = ExtraCodecs.JSON.xmap({
+            VesselJSON.JSON.decodeFromJsonElement(
+                VesselPredicateSerializer, it.toKxElement()
+            )
+        }, { VesselJSON.JSON.encodeToJsonElement(VesselPredicateSerializer, it).toGsonElement() })
+
+        val EMPTY: VesselPredicate = All(emptyList())
+    }
 }
 
 object VesselPredicateSerializer : KSerializer<VesselPredicate> {
@@ -130,13 +170,76 @@ object VesselPredicateSerializer : KSerializer<VesselPredicate> {
                 return VesselPredicate.ComponentOp(compId, path, op)
             }
 
+            "match_stack" in elem -> {
+                val stackJson = elem.getValue("match_stack")
+                val stack = json.decodeFromJsonElement(ItemStackSerializer, stackJson)
+                return VesselPredicate.MatchStack(stack)
+            }
+
+            "match_item" in elem -> {
+                val itemJson = elem.getValue("match_item")
+                val item = json.decodeFromJsonElement(ItemHolderSerializer, itemJson)
+                return VesselPredicate.MatchItem(item)
+            }
+
             else -> error("Could not determine predicate variant from keys: ${elem.keys}")
         }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(encoder: Encoder, value: VesselPredicate) {
-        // Don't need to serialize
-        encoder.encodeNull()
+        if (encoder !is JsonEncoder) error { "VesselPredicateSerializer supports JSON only" }
+        val json = encoder.json
+
+        val obj: JsonObject = when (value) {
+            is VesselPredicate.All -> JsonObject(
+                mapOf(
+                    "all" to JsonArray(
+                        value.children.map { child ->
+                            json.encodeToJsonElement(this, child)
+                        }
+                    )
+                )
+            )
+            is VesselPredicate.Any -> JsonObject(
+                mapOf(
+                    "any" to JsonArray(
+                        value.children.map { child ->
+                            json.encodeToJsonElement(this, child)
+                        }
+                    )
+                )
+            )
+            is VesselPredicate.Not -> JsonObject(
+                mapOf(
+                    "not" to json.encodeToJsonElement(this, value.child)
+                )
+            )
+            is VesselPredicate.ComponentOp -> {
+                val base = mutableMapOf<String, JsonElement>(
+                    "component" to json.encodeToJsonElement(ResourceLocationSerializer, value.componentId)
+                )
+
+                value.path?.let { path ->
+                    base["path"] = JsonPrimitive(path)
+                }
+
+                base += encodeJsonOp(value.op)
+                JsonObject(base)
+            }
+            is VesselPredicate.MatchStack -> JsonObject(
+                mapOf(
+                    "match_stack" to json.encodeToJsonElement(ItemStackSerializer, value.stack)
+                )
+            )
+            is VesselPredicate.MatchItem -> JsonObject(
+                mapOf(
+                    "match_item" to json.encodeToJsonElement(ItemHolderSerializer, value.item)
+                )
+            )
+        }
+
+        encoder.encodeJsonElement(obj)
     }
 
     /* --- helpers to delegate JsonOp inside the same JSON object ("structural" sum) --- */
@@ -199,18 +302,7 @@ fun resolveComponent(id: ResourceLocation): DataComponentType<Any>? {
 fun <T> toJson(codec: Codec<T>, value: T): JsonElement? {
     val result = codec.encodeStart(JsonOps.INSTANCE, value)
     val gson = result.result().orElse(null) ?: return null
-    return gson.toKJson()
-}
-
-fun com.google.gson.JsonElement.toKJson(): JsonElement {
-    return if (isJsonNull) JsonNull else if (isJsonArray) JsonArray(asJsonArray.asList().map { it.toKJson() })
-    else if (isJsonObject) JsonObject(asJsonObject.asMap().mapValues { it.value.toKJson() })
-    else {
-        val prim = asJsonPrimitive
-        if (prim.isString) JsonPrimitive(prim.asString)
-        else if (prim.isBoolean) JsonPrimitive(prim.asBoolean)
-        else JsonPrimitive(prim.asDouble)
-    }
+    return gson.toKxElement()
 }
 
 private fun jsonPointer(root: JsonElement?, pointer: String?): JsonElement? {

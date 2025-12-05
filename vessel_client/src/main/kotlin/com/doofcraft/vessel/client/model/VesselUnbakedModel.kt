@@ -1,10 +1,13 @@
+@file:UseSerializers(ResourceLocationSerializer::class)
+
 package com.doofcraft.vessel.client.model
 
 import com.doofcraft.vessel.common.VesselMod
-import kotlinx.serialization.Contextual
+import com.doofcraft.vessel.common.serialization.adapters.ResourceLocationSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.UseSerializers
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.renderer.block.model.BlockModel
@@ -17,7 +20,7 @@ import java.util.function.Function
 @Environment(EnvType.CLIENT)
 @Serializable
 class VesselUnbakedModel(
-    @Contextual @SerialName("parent") var parentId: ResourceLocation,
+    @SerialName("parent") var parentId: ResourceLocation,
     @SerialName("vessel_overrides") val overrides: List<VesselUnbakedOverride>,
 ) : UnbakedModel {
     @Transient

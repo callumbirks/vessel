@@ -1,9 +1,8 @@
 package com.doofcraft.vessel.client.model
 
-import com.doofcraft.vessel.client.serialization.vesselSerializationModule
 import com.doofcraft.vessel.common.VesselMod
+import com.doofcraft.vessel.common.serialization.VesselJSON
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
@@ -14,8 +13,6 @@ import net.minecraft.resources.ResourceLocation
 
 @Environment(EnvType.CLIENT)
 object VesselModelResolver: ModelResolver {
-    private val json = Json { serializersModule = vesselSerializationModule }
-
     @OptIn(ExperimentalSerializationApi::class)
     override fun resolveModel(context: ModelResolver.Context): UnbakedModel? {
         if (context.id().namespace != VesselMod.MODID) return null
@@ -32,7 +29,7 @@ object VesselModelResolver: ModelResolver {
         }
 
         res.open().use { stream ->
-            return json.decodeFromStream<VesselUnbakedModel>(stream)
+            return VesselJSON.JSON.decodeFromStream<VesselUnbakedModel>(stream)
         }
     }
 }

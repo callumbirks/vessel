@@ -4,16 +4,16 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.item.UseAnim
 
-data class ConsumableComponent(
+data class AnimatedUseComponent(
     val animation: UseAnim, val duration: Int
 ) {
     companion object {
-        val CODEC: Codec<ConsumableComponent> = RecordCodecBuilder.create { record ->
+        val CODEC: Codec<AnimatedUseComponent> = RecordCodecBuilder.create { record ->
             record.group(
                 Codec.STRING.xmap({ useAnim(it) }, { useAnimString(it) }).fieldOf("animation").forGetter(
-                    ConsumableComponent::animation
-                ), Codec.INT.fieldOf("duration").forGetter(ConsumableComponent::duration)
-            ).apply(record, ::ConsumableComponent)
+                    AnimatedUseComponent::animation
+                ), Codec.INT.fieldOf("duration").forGetter(AnimatedUseComponent::duration)
+            ).apply(record, ::AnimatedUseComponent)
         }
 
         fun useAnim(string: String): UseAnim {

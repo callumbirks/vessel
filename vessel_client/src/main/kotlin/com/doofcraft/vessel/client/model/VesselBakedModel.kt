@@ -2,6 +2,8 @@ package com.doofcraft.vessel.client.model
 
 import com.doofcraft.vessel.client.util.collections.LruCache
 import com.doofcraft.vessel.client.util.hash.Fnv64
+import com.doofcraft.vessel.common.predicate.resolveComponent
+import com.doofcraft.vessel.common.predicate.toJson
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.multiplayer.ClientLevel

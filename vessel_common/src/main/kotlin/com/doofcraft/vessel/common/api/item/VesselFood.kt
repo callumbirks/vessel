@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.common.api.item
 
 import com.doofcraft.vessel.common.component.VesselTag
+import com.doofcraft.vessel.common.registry.ModItems
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -14,6 +15,8 @@ abstract class VesselFood(tag: VesselTag, food: FoodProperties = Foods.BREAD): V
     init {
         addComponent(DataComponents.FOOD) { food }
     }
+
+    override val baseItem = ModItems.ITEM
 
     // `use` cannot be used on Foods, because we will defer to the Minecraft methods for consuming food.
     // Extra behaviours should be added to `finishUsing`.

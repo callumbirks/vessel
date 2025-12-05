@@ -3,7 +3,7 @@ package com.doofcraft.vessel.server.ui.render
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.api.item.ItemStackFactory
 import com.doofcraft.vessel.common.component.MenuButton
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.server.api.VesselRegistry
 import com.doofcraft.vessel.server.util.isEmpty
 import com.doofcraft.vessel.server.util.toText
@@ -52,7 +52,7 @@ class ItemBuilder(val icon: ItemStackFactory) {
             }))
         }
         if (button != null) {
-            itemStack.set(ModComponents.MENU_BUTTON, button)
+            itemStack.set(StackComponents.MENU_BUTTON, button)
         }
         return itemStack
     }

@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.api.config
 
+import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
 import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.api.events.config.ConfigsLoadedEvent
 import net.minecraft.resources.ResourceLocation
@@ -22,6 +23,8 @@ object VesselConfigRegistry {
             VesselEvents.CONFIGS_LOADED.emit(ConfigsLoadedEvent(factories.keys.toList()))
         }
         configsLoaded = true
+        // Components most likely change when configs are reloaded, so sync.
+        VesselBehaviourRegistry.syncToPlayers()
     }
 
     fun initialValidate() {
@@ -34,6 +37,7 @@ object VesselConfigRegistry {
         val factory = factories[id] ?: return false
         factory.reload()
         factory.validate()
+        VesselBehaviourRegistry.syncToPlayers()
         return true
     }
 

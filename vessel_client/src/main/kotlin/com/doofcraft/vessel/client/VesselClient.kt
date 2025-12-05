@@ -3,9 +3,10 @@ package com.doofcraft.vessel.client
 import com.doofcraft.vessel.client.model.VesselBlockEntityRenderer
 import com.doofcraft.vessel.client.model.VesselModelResolver
 import com.doofcraft.vessel.common.VesselMod
+import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import com.doofcraft.vessel.common.registry.ModBlocks
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.common.registry.ModItems
 import com.doofcraft.vessel.common.registry.VesselPackets
 import com.doofcraft.vessel.common.tooltip.TooltipRegistry
@@ -19,12 +20,13 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers
 object VesselClient : ClientModInitializer {
 	override fun onInitializeClient() {
         VesselMod.LOGGER.info("Initializing client...")
-        ModComponents.register()
+        StackComponents.register()
         ModItems.register()
         ModBlocks.register()
         ModBlockEntities.register()
         VesselPackets.register()
         TooltipRegistry.registerClient()
+        VesselBehaviourRegistry.registerClient()
         ModelLoadingPlugin.register { ctx ->
             VesselMod.LOGGER.info("Registering ModelLoadingPlugin...")
             ctx.resolveModel().register(VesselModelResolver)

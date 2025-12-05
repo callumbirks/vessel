@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.common.serialization
+package com.doofcraft.vessel.common.serialization.adapters
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

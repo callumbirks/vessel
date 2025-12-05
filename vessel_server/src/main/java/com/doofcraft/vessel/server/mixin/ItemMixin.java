@@ -1,7 +1,9 @@
 package com.doofcraft.vessel.server.mixin;
 
-import com.doofcraft.vessel.common.component.ConsumableComponent;
-import com.doofcraft.vessel.common.registry.ModComponents;
+import com.doofcraft.vessel.common.api.VesselBehaviourRegistry;
+import com.doofcraft.vessel.common.component.AnimatedUseComponent;
+import com.doofcraft.vessel.common.registry.BehaviourComponents;
+import com.doofcraft.vessel.common.registry.StackComponents;
 import com.doofcraft.vessel.server.api.VesselRegistry;
 import com.doofcraft.vessel.common.api.item.VesselItem;
 import com.doofcraft.vessel.common.component.VesselTag;
@@ -32,10 +34,10 @@ public class ItemMixin {
         if (tag == null) return;
 
         // Consumables functionality will be in 'finishUsingItem', and we need the VesselBaseItem.use() to be called, so skip any logic here.
-        ConsumableComponent consumable = stack.get(ModComponents.CONSUMABLE);
+        AnimatedUseComponent consumable = VesselBehaviourRegistry.get(tag.key, BehaviourComponents.ANIMATED_USE);
         if (consumable != null) return;
 
-        VesselItem item = VesselRegistry.INSTANCE.getItem(tag.key);
+        VesselItem item = VesselRegistry.getItem(tag.key);
         if (item == null) return;
 
         InteractionResultHolder<ItemStack> result = item.use(stack, (ServerLevel) level, (ServerPlayer) player, usedHand);
@@ -48,7 +50,7 @@ public class ItemMixin {
     private void vessel$useOnEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand, CallbackInfoReturnable<InteractionResult> cir) {
         VesselTag tag = stack.get(VesselTag.Companion.getCOMPONENT());
         if (tag == null) return;
-        VesselItem item = VesselRegistry.INSTANCE.getItem(tag.key);
+        VesselItem item = VesselRegistry.getItem(tag.key);
         if (item == null) return;
 
         InteractionResult result = item.useOnEntity(stack, (ServerPlayer) player, interactionTarget, usedHand);
@@ -61,7 +63,7 @@ public class ItemMixin {
     private void vessel$onClicked(ItemStack stack, ItemStack other, Slot slot, ClickAction action, Player player, SlotAccess access, CallbackInfoReturnable<Boolean> cir) {
         VesselTag tag = stack.get(VesselTag.Companion.getCOMPONENT());
         if (tag == null) return;
-        VesselItem item = VesselRegistry.INSTANCE.getItem(tag.key);
+        VesselItem item = VesselRegistry.getItem(tag.key);
         if (item == null) return;
 
         InteractionResult result = item.onClicked(stack, other, (ServerPlayer) player);
@@ -74,7 +76,7 @@ public class ItemMixin {
     private void vessel$finishUsing(ItemStack stack, Level level, LivingEntity livingEntity, CallbackInfoReturnable<ItemStack> cir) {
         VesselTag tag = stack.get(VesselTag.Companion.getCOMPONENT());
         if (tag == null) return;
-        VesselItem item = VesselRegistry.INSTANCE.getItem(tag.key);
+        VesselItem item = VesselRegistry.getItem(tag.key);
         if (item == null) return;
 
         InteractionResultHolder<ItemStack> result = item.finishUsing(stack, (ServerLevel) level, livingEntity);

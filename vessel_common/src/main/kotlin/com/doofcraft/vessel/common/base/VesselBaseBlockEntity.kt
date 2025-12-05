@@ -2,7 +2,7 @@ package com.doofcraft.vessel.common.base
 
 import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.registry.ModBlockEntities
-import com.doofcraft.vessel.common.registry.ModComponents
+import com.doofcraft.vessel.common.registry.StackComponents
 import net.minecraft.core.BlockPos
 import net.minecraft.core.HolderLookup
 import net.minecraft.core.component.DataComponentType
@@ -33,7 +33,7 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
         this.item = item.copyWithCount(1)
         this.yaw = yaw
 
-        val shape = this.item.get(ModComponents.BLOCK_SHAPE)
+        val shape = this.item.get(StackComponents.BLOCK_SHAPE)
         if (shape != null) {
             this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
         }
@@ -70,7 +70,7 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
     override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
         item = tag.getCompound("item").let { ItemStack.parse(registries, it).orElse(ItemStack.EMPTY) }
         yaw = tag.getFloat("yaw")
-        val shape = item.get(ModComponents.BLOCK_SHAPE)
+        val shape = item.get(StackComponents.BLOCK_SHAPE)
         if (shape != null) {
             this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
             setChangedAndSync()

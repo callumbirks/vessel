@@ -2,8 +2,9 @@ package com.doofcraft.vessel.common.registry
 
 import com.doofcraft.vessel.common.network.NetworkPacket
 import com.doofcraft.vessel.common.network.PacketRegisterInfo
-import com.doofcraft.vessel.common.network.ReloadComponentRegistryS2CPacket
+import com.doofcraft.vessel.common.network.ReloadBehavioursS2CPacket
 import com.doofcraft.vessel.common.network.ReloadTooltipsS2CPacket
+import com.doofcraft.vessel.common.network.SetBehaviourS2CPacket
 
 object VesselPackets {
     private val packets = mutableListOf<PacketRegisterInfo<*>>()
@@ -27,10 +28,19 @@ object VesselPackets {
     )
 
     @JvmField
-    val RELOAD_COMPONENTS_S2C = create(
+    val RELOAD_BEHAVIOURS_S2C = create(
         PacketRegisterInfo(
-            ReloadComponentRegistryS2CPacket.ID,
-            ReloadComponentRegistryS2CPacket::decode,
+            ReloadBehavioursS2CPacket.ID,
+            ReloadBehavioursS2CPacket::decode,
+            PacketRegisterInfo.Direction.Clientbound
+        )
+    )
+
+    @JvmField
+    val SET_BEHAVIOURS_S2C = create(
+        PacketRegisterInfo(
+            SetBehaviourS2CPacket.ID,
+            SetBehaviourS2CPacket::decode,
             PacketRegisterInfo.Direction.Clientbound
         )
     )

@@ -12,6 +12,9 @@ object VesselMod {
     var server: MinecraftServer? = null
         private set
 
+    var isInitialized = false
+        private set
+
     val isServer
         get() = server != null
 
@@ -21,5 +24,10 @@ object VesselMod {
     fun setServer(server: MinecraftServer) {
         require(this.server == null) { "VesselMod.server has been set more than once!" }
         this.server = server
+    }
+
+    fun setInitialized() {
+        require(!this.isInitialized) { "VesselMod.isInitialized has been set more than once!" }
+        this.isInitialized = true
     }
 }

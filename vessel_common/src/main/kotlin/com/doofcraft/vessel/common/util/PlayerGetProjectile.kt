@@ -1,14 +1,14 @@
 package com.doofcraft.vessel.common.util
 
 import com.doofcraft.vessel.common.base.VesselBaseProjectileWeapon
-import com.doofcraft.vessel.common.component.ProjectileWeaponComponent
+import com.doofcraft.vessel.common.component.ProjectileWeaponData
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ProjectileWeaponItem
 import java.util.function.Predicate
 
 // Modified from Player::getProjectile to fit VesselBaseProjectileWeapon
-fun Player.getVesselProjectile(weaponStack: ItemStack, config: ProjectileWeaponComponent): ItemStack {
+fun Player.getVesselProjectile(weaponStack: ItemStack, config: ProjectileWeaponData): ItemStack {
     if (weaponStack.item !is VesselBaseProjectileWeapon) {
         return ItemStack.EMPTY
     }
@@ -19,7 +19,7 @@ fun Player.getVesselProjectile(weaponStack: ItemStack, config: ProjectileWeaponC
     if (!itemStack.isEmpty) {
         return itemStack
     }
-
+    // Search the whole inventory
     for (stack in this.inventory.items) {
         if (predicate.test(stack)) {
             return stack

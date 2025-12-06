@@ -23,8 +23,6 @@ object VesselConfigRegistry {
             VesselEvents.CONFIGS_LOADED.emit(ConfigsLoadedEvent(factories.keys.toList()))
         }
         configsLoaded = true
-        // Components most likely change when configs are reloaded, so sync.
-        VesselBehaviourRegistry.syncToPlayers()
     }
 
     fun initialValidate() {
@@ -37,7 +35,6 @@ object VesselConfigRegistry {
         val factory = factories[id] ?: return false
         factory.reload()
         factory.validate()
-        VesselBehaviourRegistry.syncToPlayers()
         return true
     }
 

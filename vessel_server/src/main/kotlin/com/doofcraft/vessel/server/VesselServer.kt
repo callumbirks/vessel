@@ -3,6 +3,7 @@ package com.doofcraft.vessel.server
 import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.common.component.VesselTag
+import com.doofcraft.vessel.common.registry.BehaviourComponents
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import com.doofcraft.vessel.common.registry.ModBlocks
 import com.doofcraft.vessel.common.registry.StackComponents
@@ -36,6 +37,7 @@ object VesselServer: DedicatedServerModInitializer {
         ServerLifecycleEvents.SERVER_STARTING.register { server ->
             this.server = server
             VesselMod.setServer(server)
+            VesselMod.setInitialized()
             lateInitialize()
         }
 
@@ -49,6 +51,7 @@ object VesselServer: DedicatedServerModInitializer {
         }
 
         StackComponents.register()
+        BehaviourComponents.register()
         ModItems.register()
         ModBlocks.register()
         ModBlockEntities.register()
@@ -65,6 +68,7 @@ object VesselServer: DedicatedServerModInitializer {
     // Stuff that needs to run after all mods have been loaded and initialized.
     private fun lateInitialize() {
         VesselDataProvider.reloadAll()
+        VesselRegistry.registerAllBehaviours()
     }
 
     fun useBlock(player: Player, world: Level, hand: InteractionHand, blockHitResult: BlockHitResult): InteractionResult {

@@ -1,17 +1,21 @@
 package com.doofcraft.vessel.common.api.item
 
-import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
-import com.doofcraft.vessel.common.component.ProjectileWeaponComponent
+import com.doofcraft.vessel.common.component.AnimatedUseComponent
+import com.doofcraft.vessel.common.component.ProjectileWeaponData
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.BehaviourComponents
 import com.doofcraft.vessel.common.registry.ModItems
+import net.minecraft.world.item.UseAnim
 
-abstract class VesselProjectileWeapon(
-    tag: VesselTag, behaviour: ProjectileWeaponComponent
-) : Vessel(tag) {
+abstract class VesselProjectileWeapon(tag: VesselTag, behaviour: ProjectileWeaponData) : Vessel(tag) {
     override val baseItem = ModItems.PROJECTILE_WEAPON
 
     init {
-        VesselBehaviourRegistry.set(tag.key, BehaviourComponents.PROJECTILE_WEAPON, behaviour)
+        addBehaviour(BehaviourComponents.PROJECTILE_WEAPON) { behaviour }
+        addBehaviour(BehaviourComponents.ANIMATED_USE) {
+            AnimatedUseComponent(
+                UseAnim.SPEAR, if (behaviour.chargesUp) 72000 else 0
+            )
+        }
     }
 }

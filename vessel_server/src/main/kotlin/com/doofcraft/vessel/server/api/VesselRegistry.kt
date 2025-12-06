@@ -78,8 +78,13 @@ object VesselRegistry {
         return VesselIdentifier.Companion.vessel(tag.key)
     }
 
-    fun <T : VesselItem> register(item: T): T {
+    fun <T : Vessel> register(item: T): T {
         items[item.tag.key] = item
+        // If we're registering an item after the server is initialized, we've already called
+        //  `registerAllBehaviours()`, so we need to register this manually.
+        if (VesselMod.isInitialized) {
+            item.registerBehaviours()
+        }
         return item
     }
 
@@ -91,5 +96,11 @@ object VesselRegistry {
 
     inline fun <reified T : Vessel> removeTyped() {
         all().filterIsInstance<T>().forEach { remove(it.tag.key) }
+    }
+
+    internal fun registerAllBehaviours() {
+        for (item in items.values) {
+            item.registerBehaviours()
+        }
     }
 }

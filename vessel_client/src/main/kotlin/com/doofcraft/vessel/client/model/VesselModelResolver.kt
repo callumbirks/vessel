@@ -17,12 +17,14 @@ object VesselModelResolver: ModelResolver {
     override fun resolveModel(context: ModelResolver.Context): UnbakedModel? {
         if (context.id().namespace != VesselMod.MODID) return null
         VesselMod.LOGGER.info("Resolving model {}", context.id())
-        when (context.id().path) {
-            "item/item", "block/block", "item/block_item", "item/tool" -> {}
+        val modelFile = when (context.id().path) {
+            "item/item", "item/tool", "item/projectile_weapon" -> "item/item"
+            "block/block" -> "block/block"
+            "item/block_item" -> "item/block_item"
             else -> return null
         }
         val rm = Minecraft.getInstance().resourceManager
-        val resId = ResourceLocation.fromNamespaceAndPath(context.id().namespace, "models/${context.id().path}.json")
+        val resId = ResourceLocation.fromNamespaceAndPath(context.id().namespace, "models/$modelFile.json")
         val res = rm.getResource(resId).orElse(null) ?: run {
             VesselMod.LOGGER.warn("Failed to get Resource with id $resId")
             return null

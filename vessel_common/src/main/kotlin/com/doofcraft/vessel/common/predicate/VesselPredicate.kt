@@ -14,6 +14,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -25,8 +26,10 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonEncoder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import net.minecraft.core.Holder
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
@@ -74,8 +77,18 @@ sealed interface VesselPredicate {
     data class MatchItem(
         val item: Holder<Item>
     ) : VesselPredicate {
+        constructor(item: Item) : this(BuiltInRegistries.ITEM.wrapAsHolder(item))
+
         override fun test(stack: ItemStack): Boolean {
             return stack.itemHolder == item
+        }
+
+        override fun componentList(): List<ResourceLocation> = emptyList()
+    }
+
+    data class Bool(val b: Boolean) : VesselPredicate {
+        override fun test(stack: ItemStack): Boolean {
+            return b
         }
 
         override fun componentList(): List<ResourceLocation> = emptyList()
@@ -129,7 +142,7 @@ sealed interface VesselPredicate {
             )
         }, { VesselJSON.JSON.encodeToJsonElement(VesselPredicateSerializer, it).toGsonElement() })
 
-        val EMPTY: VesselPredicate = All(emptyList())
+        val NONE: VesselPredicate = Bool(false)
     }
 }
 
@@ -182,6 +195,11 @@ object VesselPredicateSerializer : KSerializer<VesselPredicate> {
                 return VesselPredicate.MatchItem(item)
             }
 
+            "bool" in elem -> {
+                val boolJson = elem.getValue("bool")
+                return VesselPredicate.Bool(boolJson.jsonPrimitive.boolean)
+            }
+
             else -> error("Could not determine predicate variant from keys: ${elem.keys}")
         }
     }
@@ -195,26 +213,23 @@ object VesselPredicateSerializer : KSerializer<VesselPredicate> {
             is VesselPredicate.All -> JsonObject(
                 mapOf(
                     "all" to JsonArray(
-                        value.children.map { child ->
-                            json.encodeToJsonElement(this, child)
-                        }
-                    )
-                )
-            )
+                value.children.map { child ->
+                    json.encodeToJsonElement(this, child)
+                })))
+
             is VesselPredicate.Any -> JsonObject(
                 mapOf(
                     "any" to JsonArray(
-                        value.children.map { child ->
-                            json.encodeToJsonElement(this, child)
-                        }
-                    )
-                )
-            )
+                value.children.map { child ->
+                    json.encodeToJsonElement(this, child)
+                })))
+
             is VesselPredicate.Not -> JsonObject(
                 mapOf(
                     "not" to json.encodeToJsonElement(this, value.child)
                 )
             )
+
             is VesselPredicate.ComponentOp -> {
                 val base = mutableMapOf<String, JsonElement>(
                     "component" to json.encodeToJsonElement(ResourceLocationSerializer, value.componentId)
@@ -227,14 +242,22 @@ object VesselPredicateSerializer : KSerializer<VesselPredicate> {
                 base += encodeJsonOp(value.op)
                 JsonObject(base)
             }
+
             is VesselPredicate.MatchStack -> JsonObject(
                 mapOf(
                     "match_stack" to json.encodeToJsonElement(ItemStackSerializer, value.stack)
                 )
             )
+
             is VesselPredicate.MatchItem -> JsonObject(
                 mapOf(
                     "match_item" to json.encodeToJsonElement(ItemHolderSerializer, value.item)
+                )
+            )
+
+            is VesselPredicate.Bool -> JsonObject(
+                mapOf(
+                    "bool" to json.encodeToJsonElement(Boolean.serializer(), value.b)
                 )
             )
         }

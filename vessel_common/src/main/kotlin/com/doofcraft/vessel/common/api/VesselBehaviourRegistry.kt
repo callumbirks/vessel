@@ -2,8 +2,11 @@ package com.doofcraft.vessel.common.api
 
 import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.network.ClientNetworkPacketHandler
-import com.doofcraft.vessel.common.network.ReloadComponentRegistryS2CPacket
+import com.doofcraft.vessel.common.network.ReloadBehavioursS2CPacket
+import com.doofcraft.vessel.common.network.SetBehaviourS2CPacket
 import com.doofcraft.vessel.common.registry.VesselPackets
+import com.doofcraft.vessel.common.serialization.VesselJSON
+import com.doofcraft.vessel.common.serialization.adapters.GsonSerializer
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.client.Minecraft
 import net.minecraft.core.component.DataComponentMap
@@ -27,12 +30,14 @@ object VesselBehaviourRegistry {
     fun has(key: String): Boolean = components.containsKey(key)
 
     @JvmStatic
-    fun has(key: String, component: DataComponentType<*>): Boolean = components[key]?.has(component) ?: false
+    fun <T> has(key: String, component: DataComponentType<T>): Boolean = components[key]?.has(component) ?: false
 
     @JvmStatic
     fun set(key: String, map: DataComponentMap) {
         if (VesselMod.isClient) error { "Cannot call VesselComponentRegistry.set from the client" }
-        components[key] = PatchedDataComponentMap(map)
+        components[key] = map as? PatchedDataComponentMap ?: PatchedDataComponentMap(map)
+        // After each set we need to sync the new behaviour to the players
+        SetBehaviourS2CPacket(key, map).sendToAllPlayers()
     }
 
     @JvmStatic
@@ -41,36 +46,40 @@ object VesselBehaviourRegistry {
         val map =
             components.computeIfAbsent(key) { PatchedDataComponentMap(DataComponentMap.EMPTY) } as PatchedDataComponentMap
         map.set(component, value)
+        // After each set we need to sync the new behaviour to the players
+        SetBehaviourS2CPacket(key, map).sendToAllPlayers()
     }
 
     @JvmStatic
     fun remove(key: String) {
         if (VesselMod.isClient) error { "Cannot call VesselComponentRegistry.remove from the client" }
-        components.remove(key)
+        if (components.remove(key) != null) {
+            SetBehaviourS2CPacket(key, DataComponentMap.EMPTY).sendToAllPlayers()
+        }
     }
 
     @JvmStatic
-    fun remove(key: String, component: DataComponentType<*>) {
+    fun <T> remove(key: String, component: DataComponentType<T>) {
         if (VesselMod.isClient) error { "Cannot call VesselComponentRegistry.remove from the client" }
         val map = components[key] as PatchedDataComponentMap? ?: return
         map.remove(component)
+        SetBehaviourS2CPacket(key, map).sendToAllPlayers()
     }
 
     init {
-        if (VesselMod.isServer) {
-            ServerPlayConnectionEvents.JOIN.register { listener, sender, server ->
-                ReloadComponentRegistryS2CPacket(components).sendToPlayer(listener.player)
-            }
+        ServerPlayConnectionEvents.JOIN.register { listener, sender, server ->
+            ReloadBehavioursS2CPacket(components).sendToPlayer(listener.player)
         }
     }
 
     fun registerClient() {
-        VesselPackets.RELOAD_COMPONENTS_S2C.registerClientHandler(ReloadComponentsPacketHandler)
+        VesselPackets.RELOAD_BEHAVIOURS_S2C.registerClientHandler(ReloadComponentsPacketHandler)
+        VesselPackets.SET_BEHAVIOURS_S2C.registerClientHandler(SetComponentsPacketHandler)
     }
 
     @JvmStatic
     fun syncToPlayers() {
-        ReloadComponentRegistryS2CPacket(components).sendToAllPlayers()
+        ReloadBehavioursS2CPacket(components).sendToAllPlayers()
     }
 
     private fun reload(components: Map<String, DataComponentMap>) {
@@ -81,9 +90,30 @@ object VesselBehaviourRegistry {
         }
     }
 
-    object ReloadComponentsPacketHandler : ClientNetworkPacketHandler<ReloadComponentRegistryS2CPacket> {
-        override fun handle(packet: ReloadComponentRegistryS2CPacket, client: Minecraft) {
+    object ReloadComponentsPacketHandler : ClientNetworkPacketHandler<ReloadBehavioursS2CPacket> {
+        override fun handle(packet: ReloadBehavioursS2CPacket, client: Minecraft) {
+            VesselMod.LOGGER.info("RELOAD_BEHAVIOURS_S2C {}", packet.components.map { (k, v) ->
+                k to VesselJSON.JSON.encodeToString(
+                    GsonSerializer, DataComponentMap.CODEC.encodeStart(VesselJSON.MINECRAFT_JSON_OPS, v).getOrThrow()
+                )
+            })
             reload(packet.components)
+        }
+    }
+
+    object SetComponentsPacketHandler : ClientNetworkPacketHandler<SetBehaviourS2CPacket> {
+        override fun handle(packet: SetBehaviourS2CPacket, client: Minecraft) {
+            VesselMod.LOGGER.info(
+                "SET_BEHAVIOURS_S2C {} {}", packet.key, VesselJSON.JSON.encodeToString(
+                    GsonSerializer,
+                    DataComponentMap.CODEC.encodeStart(VesselJSON.MINECRAFT_JSON_OPS, packet.components).getOrThrow()
+                )
+            )
+            if (packet.components.isEmpty) {
+                components.remove(packet.key)
+            } else {
+                components[packet.key] = packet.components
+            }
         }
     }
 }

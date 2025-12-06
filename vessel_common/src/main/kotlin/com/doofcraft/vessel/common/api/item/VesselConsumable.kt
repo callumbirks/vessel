@@ -1,7 +1,5 @@
 package com.doofcraft.vessel.common.api.item
 
-import com.doofcraft.vessel.common.VesselMod
-import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
 import com.doofcraft.vessel.common.component.AnimatedUseComponent
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.BehaviourComponents
@@ -14,9 +12,7 @@ import net.minecraft.world.item.UseAnim
 
 abstract class VesselConsumable(tag: VesselTag, animation: UseAnim, duration: Int = 32): VesselItem(tag) {
     init {
-        if (VesselMod.isServer) {
-            VesselBehaviourRegistry.set(tag.key, BehaviourComponents.ANIMATED_USE, AnimatedUseComponent(animation, duration))
-        }
+        addBehaviour(BehaviourComponents.ANIMATED_USE) { AnimatedUseComponent(animation, duration) }
     }
 
     // `use` cannot be used on Consumables, because we will defer to `VesselBaseConsumable.use`.

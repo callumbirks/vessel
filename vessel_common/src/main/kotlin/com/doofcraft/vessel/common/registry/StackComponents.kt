@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.common.registry
 
 import com.doofcraft.vessel.common.component.BlockShapeComponent
+import com.doofcraft.vessel.common.component.CooldownComponent
 import com.doofcraft.vessel.common.component.IngredientComponent
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.common.component.VesselTag
@@ -29,5 +30,10 @@ object StackComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataComp
     @JvmField
     val INGREDIENT: DataComponentType<IngredientComponent> = create(
         "ingredient", DataComponentType.builder<IngredientComponent>().persistent(IngredientComponent.CODEC).build()
+    )
+
+    @JvmField
+    val COOLDOWN: DataComponentType<CooldownComponent> = create(
+        "cooldown", DataComponentType.builder<CooldownComponent>().persistent(CooldownComponent.CODEC).build()
     )
 }

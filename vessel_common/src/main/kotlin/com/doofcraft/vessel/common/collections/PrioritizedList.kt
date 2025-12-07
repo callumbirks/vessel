@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api.collections
+package com.doofcraft.vessel.common.collections
 
 /**
  * Functions like a list which is ordered by [Priority]. Within each category of priority,

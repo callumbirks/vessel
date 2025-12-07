@@ -1,6 +1,4 @@
-package com.doofcraft.vessel.server.api.reactive
-
-import com.doofcraft.vessel.server.api.events.Cancelable
+package com.doofcraft.vessel.common.reactive
 
 open class EventObservable<T> : SimpleObservable<T>() {
     inline fun post(vararg events: T, then: (T) -> Unit = {}) {

@@ -3,7 +3,7 @@ package com.doofcraft.vessel.common.api.item
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
 import com.doofcraft.vessel.common.component.BlockShapeComponent
 import com.doofcraft.vessel.common.component.VesselTag
-import com.doofcraft.vessel.common.registry.StackComponents
+import com.doofcraft.vessel.common.registry.BehaviourComponents
 import com.doofcraft.vessel.common.registry.ModItems
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerLevel
@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.level.ItemLike
 import net.minecraft.world.level.LevelAccessor
+import kotlin.math.abs
 
 abstract class VesselBlock(
     tag: VesselTag,
@@ -21,8 +22,8 @@ abstract class VesselBlock(
     override val baseItem: ItemLike = ModItems.BLOCK_ITEM
 
     init {
-        if (shape != null) {
-            addComponent(StackComponents.BLOCK_SHAPE) { shape }
+        if (shape != null && shape.isValid()) {
+            addBehaviour(BehaviourComponents.BLOCK_SHAPE) { shape }
         }
     }
 

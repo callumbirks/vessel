@@ -1,12 +1,12 @@
 package com.doofcraft.vessel.server.api.events
 
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import com.doofcraft.vessel.server.api.events.config.ConfigsLoadedEvent
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuClosedEvent
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuOpenedEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityLoadEvent
 import com.doofcraft.vessel.server.api.events.world.BlockEntityUnloadEvent
-import com.doofcraft.vessel.server.api.reactive.SimpleObservable
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerBlockEntityEvents
 
 object VesselEvents {

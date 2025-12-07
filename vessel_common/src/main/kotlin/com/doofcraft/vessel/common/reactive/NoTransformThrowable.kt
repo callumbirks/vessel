@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 
 /**
  * A specific exception that allows canceled transformations to occur in pipes.

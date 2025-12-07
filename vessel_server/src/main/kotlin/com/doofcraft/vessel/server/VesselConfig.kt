@@ -1,9 +1,9 @@
 package com.doofcraft.vessel.server
 
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import com.doofcraft.vessel.common.util.vesselResource
 import com.doofcraft.vessel.server.api.config.ConfigFactory
 import com.doofcraft.vessel.server.api.data.Result
-import com.doofcraft.vessel.server.api.reactive.SimpleObservable
 import io.lettuce.core.RedisURI
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,7 +1,7 @@
 package com.doofcraft.vessel.server.api.data
 
 import com.doofcraft.vessel.common.VesselMod
-import com.doofcraft.vessel.server.api.reactive.SimpleObservable
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json

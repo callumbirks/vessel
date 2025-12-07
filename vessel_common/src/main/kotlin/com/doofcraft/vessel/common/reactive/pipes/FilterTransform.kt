@@ -1,6 +1,6 @@
-package com.doofcraft.vessel.server.api.reactive.pipes
+package com.doofcraft.vessel.common.reactive.pipes
 
-import com.doofcraft.vessel.server.api.reactive.Transform
+import com.doofcraft.vessel.common.reactive.Transform
 
 /**
  * A transform that will only emit received values that match the given predicate.

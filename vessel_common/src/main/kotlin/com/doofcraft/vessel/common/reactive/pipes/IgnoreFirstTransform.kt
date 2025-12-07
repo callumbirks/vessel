@@ -1,6 +1,6 @@
-package com.doofcraft.vessel.server.api.reactive.pipes
+package com.doofcraft.vessel.common.reactive.pipes
 
-import com.doofcraft.vessel.server.api.reactive.Transform
+import com.doofcraft.vessel.common.reactive.Transform
 
 /**
  * A transform that will ignore some number of initial emissions before it will continue as usual.

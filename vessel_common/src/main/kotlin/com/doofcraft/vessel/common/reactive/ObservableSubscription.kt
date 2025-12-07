@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 
 class ObservableSubscription<T>(
     private val observable: Observable<T>,

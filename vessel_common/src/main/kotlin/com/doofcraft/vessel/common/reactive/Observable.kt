@@ -1,12 +1,12 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 
-import com.doofcraft.vessel.server.api.collections.Priority
-import com.doofcraft.vessel.server.api.reactive.pipes.EmitWhileTransform
-import com.doofcraft.vessel.server.api.reactive.pipes.FilterTransform
-import com.doofcraft.vessel.server.api.reactive.pipes.IgnoreFirstTransform
-import com.doofcraft.vessel.server.api.reactive.pipes.MapTransform
-import com.doofcraft.vessel.server.api.reactive.pipes.StopAfterTransform
-import com.doofcraft.vessel.server.api.reactive.pipes.TakeFirstTransform
+import com.doofcraft.vessel.common.collections.Priority
+import com.doofcraft.vessel.common.reactive.pipes.EmitWhileTransform
+import com.doofcraft.vessel.common.reactive.pipes.FilterTransform
+import com.doofcraft.vessel.common.reactive.pipes.IgnoreFirstTransform
+import com.doofcraft.vessel.common.reactive.pipes.MapTransform
+import com.doofcraft.vessel.common.reactive.pipes.StopAfterTransform
+import com.doofcraft.vessel.common.reactive.pipes.TakeFirstTransform
 import java.lang.Thread.sleep
 import java.util.concurrent.CompletableFuture
 

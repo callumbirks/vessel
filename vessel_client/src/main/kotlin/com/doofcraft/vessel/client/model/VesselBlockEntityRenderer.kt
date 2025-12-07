@@ -35,7 +35,7 @@ class VesselBlockEntityRenderer(context: BlockEntityRendererProvider.Context) :
         val packedLight = LevelRenderer.getLightColor(blockEntity.level!!, blockEntity.blockState, blockEntity.blockPos)
 
         itemRenderer.render(
-            stack, ItemDisplayContext.GROUND, false, poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY, model
+            stack, ItemDisplayContext.HEAD, false, poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY, model
         )
 
         poseStack.popPose()

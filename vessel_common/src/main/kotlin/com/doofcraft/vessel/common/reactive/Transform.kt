@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 /**
  * A transformation function that can be used in [Observable.pipe] to translate the [Observable] in some way.
  * If an input value should not have an output, using [Transform.noTransform] will throw a controlled exception

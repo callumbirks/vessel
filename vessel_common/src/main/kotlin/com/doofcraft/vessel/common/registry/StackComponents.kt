@@ -1,6 +1,5 @@
 package com.doofcraft.vessel.common.registry
 
-import com.doofcraft.vessel.common.component.BlockShapeComponent
 import com.doofcraft.vessel.common.component.CooldownComponent
 import com.doofcraft.vessel.common.component.IngredientComponent
 import com.doofcraft.vessel.common.component.MenuButton
@@ -20,11 +19,6 @@ object StackComponents : SimpleRegistry<Registry<DataComponentType<*>>, DataComp
     @JvmField
     val MENU_BUTTON: DataComponentType<MenuButton> = create(
         "menu_button", DataComponentType.builder<MenuButton>().networkSynchronized(MenuButton.NOOP_CODEC).build()
-    )
-
-    @JvmField
-    val BLOCK_SHAPE: DataComponentType<BlockShapeComponent> = create(
-        "block_shape", DataComponentType.builder<BlockShapeComponent>().persistent(BlockShapeComponent.CODEC).build()
     )
 
     @JvmField

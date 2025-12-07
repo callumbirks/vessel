@@ -1,4 +1,4 @@
-package com.doofcraft.vessel.server.api.events
+package com.doofcraft.vessel.common.reactive
 
 /**
  * Something that can be canceled. This is a highly complex class and should only be read by professional engineers.

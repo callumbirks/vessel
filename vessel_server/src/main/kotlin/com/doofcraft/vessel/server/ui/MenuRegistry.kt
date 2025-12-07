@@ -1,7 +1,7 @@
 package com.doofcraft.vessel.server.ui
 
 import com.doofcraft.vessel.common.VesselMod
-import com.doofcraft.vessel.server.api.reactive.SimpleObservable
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import com.doofcraft.vessel.server.ui.model.MenuDefinition
 import com.doofcraft.vessel.common.util.vesselResource
 import com.doofcraft.vessel.server.api.data.JsonDataRegistry

@@ -1,10 +1,10 @@
 package com.doofcraft.vessel.server.tooltip
 
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import com.doofcraft.vessel.common.tooltip.TooltipRegistry
 import com.doofcraft.vessel.common.util.vesselResource
 import com.doofcraft.vessel.server.api.config.ConfigFactory
 import com.doofcraft.vessel.server.api.data.Result
-import com.doofcraft.vessel.server.api.reactive.SimpleObservable
 import com.doofcraft.vessel.server.util.toText
 import de.themoep.minedown.adventure.MineDown
 import kotlinx.serialization.builtins.ListSerializer

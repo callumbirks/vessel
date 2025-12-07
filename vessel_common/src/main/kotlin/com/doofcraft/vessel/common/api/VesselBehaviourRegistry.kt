@@ -4,6 +4,7 @@ import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.network.ClientNetworkPacketHandler
 import com.doofcraft.vessel.common.network.ReloadBehavioursS2CPacket
 import com.doofcraft.vessel.common.network.SetBehaviourS2CPacket
+import com.doofcraft.vessel.common.reactive.SimpleObservable
 import com.doofcraft.vessel.common.registry.VesselPackets
 import com.doofcraft.vessel.common.serialization.VesselJSON
 import com.doofcraft.vessel.common.serialization.adapters.GsonSerializer
@@ -19,6 +20,8 @@ import net.minecraft.core.component.PatchedDataComponentMap
  */
 object VesselBehaviourRegistry {
     private val components = hashMapOf<String, DataComponentMap>()
+
+    val CHANGED = SimpleObservable<Map<String, DataComponentMap>>()
 
     @JvmStatic
     fun get(key: String): DataComponentMap? = components[key]
@@ -38,6 +41,7 @@ object VesselBehaviourRegistry {
         components[key] = map as? PatchedDataComponentMap ?: PatchedDataComponentMap(map)
         // After each set we need to sync the new behaviour to the players
         SetBehaviourS2CPacket(key, map).sendToAllPlayers()
+        CHANGED.emit(mapOf(key to map))
     }
 
     @JvmStatic
@@ -48,6 +52,7 @@ object VesselBehaviourRegistry {
         map.set(component, value)
         // After each set we need to sync the new behaviour to the players
         SetBehaviourS2CPacket(key, map).sendToAllPlayers()
+        CHANGED.emit(mapOf(key to map))
     }
 
     @JvmStatic
@@ -55,6 +60,7 @@ object VesselBehaviourRegistry {
         if (VesselMod.isClient) error { "Cannot call VesselComponentRegistry.remove from the client" }
         if (components.remove(key) != null) {
             SetBehaviourS2CPacket(key, DataComponentMap.EMPTY).sendToAllPlayers()
+            CHANGED.emit(mapOf(key to DataComponentMap.EMPTY))
         }
     }
 
@@ -64,6 +70,7 @@ object VesselBehaviourRegistry {
         val map = components[key] as PatchedDataComponentMap? ?: return
         map.remove(component)
         SetBehaviourS2CPacket(key, map).sendToAllPlayers()
+        CHANGED.emit(mapOf(key to map))
     }
 
     init {
@@ -88,6 +95,7 @@ object VesselBehaviourRegistry {
         for ((k, v) in components) {
             this.components[k] = v
         }
+        CHANGED.emit(components)
     }
 
     object ReloadComponentsPacketHandler : ClientNetworkPacketHandler<ReloadBehavioursS2CPacket> {
@@ -114,6 +122,7 @@ object VesselBehaviourRegistry {
             } else {
                 components[packet.key] = packet.components
             }
+            CHANGED.emit(mapOf(packet.key to packet.components))
         }
     }
 }

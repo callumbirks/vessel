@@ -1,6 +1,6 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 
-import com.doofcraft.vessel.server.api.collections.Priority
+import com.doofcraft.vessel.common.collections.Priority
 
 /**
  * An [SimpleObservable] implementation created by piping a root [Observable]. It will try to emit values

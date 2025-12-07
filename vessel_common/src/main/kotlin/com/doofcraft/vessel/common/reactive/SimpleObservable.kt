@@ -1,7 +1,7 @@
-package com.doofcraft.vessel.server.api.reactive
+package com.doofcraft.vessel.common.reactive
 
-import com.doofcraft.vessel.server.api.collections.PrioritizedList
-import com.doofcraft.vessel.server.api.collections.Priority
+import com.doofcraft.vessel.common.collections.PrioritizedList
+import com.doofcraft.vessel.common.collections.Priority
 
 /**
  * A straightforward implementation of [Observable] that can emit values but holds no state.

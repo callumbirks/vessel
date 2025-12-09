@@ -1,8 +1,13 @@
 package com.doofcraft.vessel.common.base
 
 import com.mojang.serialization.MapCodec
+import net.minecraft.client.particle.BreakingItemParticle
 import net.minecraft.core.BlockPos
+import net.minecraft.core.particles.ItemParticleOption
+import net.minecraft.core.particles.ParticleTypes
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.BlockGetter
+import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.RenderShape
 import net.minecraft.world.level.block.entity.BlockEntity
@@ -60,5 +65,30 @@ class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
     override fun getBlockSupportShape(state: BlockState, level: BlockGetter, pos: BlockPos): VoxelShape? {
         val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity ?: return Shapes.block()
         return be.shape ?: Shapes.block()
+    }
+
+    override fun spawnDestroyParticles(level: Level, player: Player, pos: BlockPos, state: BlockState) {
+        if (!level.isClientSide) return
+        val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity ?: return
+                val stack = be.item
+        if (stack.isEmpty) return
+
+        val random = level.random
+
+        repeat(32) {
+            val x = pos.x.toDouble() + 0.5 + (random.nextDouble() - 0.5)
+            val y = pos.y.toDouble() + 0.5 + (random.nextDouble() - 0.5)
+            val z = pos.z.toDouble() + 0.5 + (random.nextDouble() - 0.5)
+
+            val vx = (random.nextDouble() - 0.5) * 0.2
+            val vy = random.nextDouble() * 0.2
+            val vz = (random.nextDouble() - 0.5) * 0.2
+
+            level.addParticle(
+                ItemParticleOption(ParticleTypes.ITEM, stack),
+                x, y, z,
+                vx, vy, vz
+            )
+        }
     }
 }

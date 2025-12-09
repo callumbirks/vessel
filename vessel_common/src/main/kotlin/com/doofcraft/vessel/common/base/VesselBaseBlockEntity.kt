@@ -3,10 +3,14 @@ package com.doofcraft.vessel.common.base
 import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
 import com.doofcraft.vessel.common.component.VesselTag
+import com.doofcraft.vessel.common.reactive.ObservableSubscription
+import com.doofcraft.vessel.common.reactive.pipes.FilterTransform
+import com.doofcraft.vessel.common.reactive.pipes.MapTransform
 import com.doofcraft.vessel.common.registry.BehaviourComponents
 import com.doofcraft.vessel.common.registry.ModBlockEntities
 import net.minecraft.core.BlockPos
 import net.minecraft.core.HolderLookup
+import net.minecraft.core.component.DataComponentMap
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.protocol.Packet
@@ -16,10 +20,9 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
-import net.minecraft.world.phys.shapes.Shapes
 import net.minecraft.world.phys.shapes.VoxelShape
 
-class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBlockEntities.VESSEL, pos, state) {
+class VesselBaseBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(ModBlockEntities.VESSEL, pos, state) {
     var item: ItemStack = ItemStack.EMPTY
         private set
 
@@ -28,6 +31,8 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
 
     var yaw: Float = 0f
     var shape: VoxelShape? = null
+
+    var subscription: ObservableSubscription<DataComponentMap>? = null
 
     fun isInitialized(): Boolean = !item.isEmpty
 
@@ -40,19 +45,15 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
 
         val shape = VesselBehaviourRegistry.get(tag.key, BehaviourComponents.BLOCK_SHAPE)
         if (shape != null && shape.isValid()) {
-            this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
+            this.shape = shape.asVoxelShape()
         }
 
         setChangedAndSync()
 
-        VesselBehaviourRegistry.CHANGED.subscribe { map ->
-            val components = map[tag.key] ?: return@subscribe
-            val shape = components.get(BehaviourComponents.BLOCK_SHAPE) ?: return@subscribe
-            if (shape.isValid()) {
-                this.shape = Shapes.create(shape.x1, shape.y1, shape.z1, shape.x2, shape.y2, shape.z2)
-                setChangedAndSync()
-            }
-        }
+        subscription =
+            VesselBehaviourRegistry.CHANGED.pipe(FilterTransform { it.containsKey(tag.key) })
+                .pipe(MapTransform { it[tag.key]!! })
+                .subscribe { components -> updateShapeFromComponent(components) }
     }
 
     fun <T> has(component: DataComponentType<T>): Boolean = item.has(component)
@@ -84,11 +85,28 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
     override fun loadAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
         item = tag.getCompound("item").let { ItemStack.parse(registries, it).orElse(ItemStack.EMPTY) }
         yaw = tag.getFloat("yaw")
+        val shape = VesselBehaviourRegistry.get(this.tag.key, BehaviourComponents.BLOCK_SHAPE)
+        if (shape != null && shape.isValid()) {
+            this.shape = shape.asVoxelShape()
+            setChanged()
+        }
+        subscription?.unsubscribe()
+        subscription =
+            VesselBehaviourRegistry.CHANGED.pipe(FilterTransform { it.containsKey(this.tag.key) })
+                .pipe(MapTransform { it[this.tag.key]!! })
+                .subscribe { components -> updateShapeFromComponent(components) }
     }
 
     override fun saveAdditional(tag: CompoundTag, registries: HolderLookup.Provider) {
         if (!item.isEmpty) tag.put("item", item.save(registries))
         tag.putFloat("yaw", yaw)
+    }
+
+    override fun setRemoved() {
+        // setRemoved gets called when chunk is unloaded, so unsubscribe from BehaviourRegistry changed.
+        subscription?.unsubscribe()
+        subscription = null
+        super.setRemoved()
     }
 
     override fun getUpdateTag(registries: HolderLookup.Provider): CompoundTag? {
@@ -104,5 +122,13 @@ class VesselBaseBlockEntity(pos: BlockPos, state: BlockState): BlockEntity(ModBl
     fun setChangedAndSync() {
         setChanged()
         level?.sendBlockUpdated(worldPosition, blockState, blockState, Block.UPDATE_CLIENTS)
+    }
+
+    private fun updateShapeFromComponent(map: DataComponentMap) {
+        val shape = map.get(BehaviourComponents.BLOCK_SHAPE) ?: return
+        if (shape.isValid()) {
+            this.shape = shape.asVoxelShape()
+            setChanged()
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.doofcraft.vessel.common.registry
 
 import com.doofcraft.vessel.common.component.AnimatedUseComponent
 import com.doofcraft.vessel.common.component.BlockShapeComponent
+import com.doofcraft.vessel.common.component.ProjectileData
 import com.doofcraft.vessel.common.component.ProjectileWeaponData
 import com.doofcraft.vessel.common.predicate.VesselPredicate
 import net.minecraft.core.Registry
@@ -31,5 +32,11 @@ object BehaviourComponents : SimpleRegistry<Registry<DataComponentType<*>>, Data
     val PROJECTILE_WEAPON: DataComponentType<ProjectileWeaponData> = create(
         "projectile_weapon",
         DataComponentType.builder<ProjectileWeaponData>().persistent(ProjectileWeaponData.CODEC).build()
+    )
+
+    @JvmField
+    val PROJECTILE: DataComponentType<ProjectileData> = create(
+        "projectile",
+        DataComponentType.builder<ProjectileData>().persistent(ProjectileData.CODEC).build()
     )
 }

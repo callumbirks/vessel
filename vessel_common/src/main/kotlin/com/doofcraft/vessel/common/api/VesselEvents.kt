@@ -39,11 +39,22 @@ object VesselEvents {
     val PROJECTILE_HIT_ENTITY = SimpleObservable<ProjectileHitEntityEvent>()
 
     fun register() {
+        UseBlockCallback.EVENT.register(::useBlock)
         // Override item to skip any custom use code if the item should be used instantly (e.g. food or weapon).
         ITEM_USE.subscribe { event ->
             val tag = event.stack.vesselTag() ?: return@subscribe
             if (VesselBehaviourRegistry.has(tag.key, BehaviourComponents.ANIMATED_USE))
                 event.result = ItemUtils.startUsingInstantly(event.level, event.player, event.hand)
         }
+    }
+
+    fun useBlock(player: Player, level: Level, usedHand: InteractionHand, hitResult: BlockHitResult): InteractionResult {
+        if (player.isSpectator || usedHand != InteractionHand.MAIN_HAND) return InteractionResult.PASS
+        val pos = hitResult.blockPos
+        val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity ?: return InteractionResult.PASS
+        BLOCK_INTERACT.post(BlockInteractEvent(level, player, usedHand, be, player.getItemInHand(usedHand))) { event ->
+            if (event.result.consumesAction()) return event.result
+        }
+        return InteractionResult.PASS
     }
 }

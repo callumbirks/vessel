@@ -55,50 +55,6 @@ class VesselBaseBlock(properties: Properties) : BaseEntityBlock(properties) {
         super.onRemove(state, level, pos, newState, movedByPiston)
     }
 
-    override fun useWithoutItem(
-        state: BlockState,
-        level: Level,
-        pos: BlockPos,
-        player: Player,
-        hitResult: BlockHitResult
-    ): InteractionResult {
-        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity
-        VesselEvents.BLOCK_INTERACT.post(
-            BlockInteractEvent(
-                level,
-                player,
-                InteractionHand.MAIN_HAND,
-                be,
-                null
-            )
-        ) { event ->
-            if (event.result.consumesAction())
-                return event.result
-        }
-        return super.useWithoutItem(state, level, pos, player, hitResult)
-    }
-
-    override fun useItemOn(
-        stack: ItemStack,
-        state: BlockState,
-        level: Level,
-        pos: BlockPos,
-        player: Player,
-        hand: InteractionHand,
-        hitResult: BlockHitResult
-    ): ItemInteractionResult {
-        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity
-        VesselEvents.BLOCK_INTERACT.post(BlockInteractEvent(level, player, hand, be, stack)) { event ->
-            return when (event.result) {
-                InteractionResult.CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL
-                InteractionResult.SUCCESS_NO_ITEM_USED, InteractionResult.SUCCESS -> ItemInteractionResult.SUCCESS
-                InteractionResult.CONSUME -> ItemInteractionResult.CONSUME
-                else -> super.useItemOn(stack, state, level, pos, player, hand, hitResult)
-            }
-        }
-        return super.useItemOn(stack, state, level, pos, player, hand, hitResult)
-    }
-
     override fun getRenderShape(state: BlockState): RenderShape {
         return RenderShape.INVISIBLE
     }

@@ -1,26 +1,102 @@
 package com.doofcraft.vessel.common.base
 
+import com.doofcraft.vessel.common.api.VesselEvents
+import com.doofcraft.vessel.common.api.event.BlockDestroyedEvent
+import com.doofcraft.vessel.common.api.event.BlockInteractEvent
+import com.doofcraft.vessel.common.api.event.BlockPlacedEvent
+import com.doofcraft.vessel.common.component.VesselTag
 import com.mojang.serialization.MapCodec
 import net.minecraft.client.particle.BreakingItemParticle
 import net.minecraft.core.BlockPos
 import net.minecraft.core.particles.ItemParticleOption
 import net.minecraft.core.particles.ParticleTypes
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.ItemInteractionResult
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.RenderShape
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.shapes.CollisionContext
 import net.minecraft.world.phys.shapes.Shapes
 import net.minecraft.world.phys.shapes.VoxelShape
 
-class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
+class VesselBaseBlock(properties: Properties) : BaseEntityBlock(properties) {
     override fun codec(): MapCodec<out BaseEntityBlock> = simpleCodec(::VesselBaseBlock)
 
     override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
         return VesselBaseBlockEntity(pos, state)
+    }
+
+    override fun setPlacedBy(level: Level, pos: BlockPos, state: BlockState, placer: LivingEntity?, stack: ItemStack) {
+        super.setPlacedBy(level, pos, state, placer, stack)
+        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity? ?: return
+        VesselEvents.BLOCK_PLACED.emit(BlockPlacedEvent(level, pos, placer, be))
+    }
+
+    override fun onRemove(
+        state: BlockState,
+        level: Level,
+        pos: BlockPos,
+        newState: BlockState,
+        movedByPiston: Boolean
+    ) {
+        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity?
+        if (be != null) {
+            VesselEvents.BLOCK_DESTROYED.emit(BlockDestroyedEvent(level, pos, be))
+        }
+
+        super.onRemove(state, level, pos, newState, movedByPiston)
+    }
+
+    override fun useWithoutItem(
+        state: BlockState,
+        level: Level,
+        pos: BlockPos,
+        player: Player,
+        hitResult: BlockHitResult
+    ): InteractionResult {
+        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity
+        VesselEvents.BLOCK_INTERACT.post(
+            BlockInteractEvent(
+                level,
+                player,
+                InteractionHand.MAIN_HAND,
+                be,
+                null
+            )
+        ) { event ->
+            if (event.result.consumesAction())
+                return event.result
+        }
+        return super.useWithoutItem(state, level, pos, player, hitResult)
+    }
+
+    override fun useItemOn(
+        stack: ItemStack,
+        state: BlockState,
+        level: Level,
+        pos: BlockPos,
+        player: Player,
+        hand: InteractionHand,
+        hitResult: BlockHitResult
+    ): ItemInteractionResult {
+        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity
+        VesselEvents.BLOCK_INTERACT.post(BlockInteractEvent(level, player, hand, be, stack)) { event ->
+            return when (event.result) {
+                InteractionResult.CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL
+                InteractionResult.SUCCESS_NO_ITEM_USED, InteractionResult.SUCCESS -> ItemInteractionResult.SUCCESS
+                InteractionResult.CONSUME -> ItemInteractionResult.CONSUME
+                else -> super.useItemOn(stack, state, level, pos, player, hand, hitResult)
+            }
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hitResult)
     }
 
     override fun getRenderShape(state: BlockState): RenderShape {
@@ -70,7 +146,7 @@ class VesselBaseBlock(properties: Properties): BaseEntityBlock(properties) {
     override fun spawnDestroyParticles(level: Level, player: Player, pos: BlockPos, state: BlockState) {
         if (!level.isClientSide) return
         val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity ?: return
-                val stack = be.item
+        val stack = be.item
         if (stack.isEmpty) return
 
         val random = level.random

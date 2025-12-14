@@ -12,8 +12,7 @@ import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.level.ItemLike
-import net.minecraft.world.level.LevelAccessor
-import kotlin.math.abs
+import net.minecraft.world.level.Level
 
 abstract class VesselBlock(
     tag: VesselTag,
@@ -36,6 +35,6 @@ abstract class VesselBlock(
     open fun onPlaced(level: ServerLevel, pos: BlockPos, placer: LivingEntity?, entity: VesselBaseBlockEntity) {
     }
 
-    open fun onDestroyed(level: LevelAccessor, pos: BlockPos, entity: VesselBaseBlockEntity) {
+    open fun onDestroyed(level: Level, pos: BlockPos, entity: VesselBaseBlockEntity) {
     }
 }

@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.common.api.item
 
+import com.doofcraft.vessel.common.base.VesselBaseProjectile
 import com.doofcraft.vessel.common.component.ProjectileData
 import com.doofcraft.vessel.common.component.VesselTag
 import com.doofcraft.vessel.common.registry.BehaviourComponents
@@ -9,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResultHolder
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.phys.EntityHitResult
 
 abstract class VesselProjectile(tag: VesselTag, data: ProjectileData) : VesselItem(tag) {
     init {
@@ -26,4 +28,6 @@ abstract class VesselProjectile(tag: VesselTag, data: ProjectileData) : VesselIt
     ): InteractionResultHolder<ItemStack> {
         return InteractionResultHolder.pass(stack)
     }
+
+    open fun onHitEntity(hitResult: EntityHitResult, projectile: VesselBaseProjectile) {}
 }

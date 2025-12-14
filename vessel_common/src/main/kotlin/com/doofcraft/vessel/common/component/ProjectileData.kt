@@ -7,10 +7,16 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.sounds.SoundEvent
 
 data class ProjectileData(
-    val throwable: Boolean, val throwVelocity: Float, val damage: Float, val throwSound: Holder<SoundEvent>?
+    val throwable: Boolean,
+    val throwVelocity: Float,
+    val damage: Float,
+    val throwSound: Holder<SoundEvent>?,
 ) {
-    constructor(throwable: Boolean, throwVelocity: Float, damage: Float, throwSound: SoundEvent?) : this(
-        throwable, throwVelocity, damage, throwSound?.let { BuiltInRegistries.SOUND_EVENT.wrapAsHolder(it) })
+    constructor(
+        throwable: Boolean, throwVelocity: Float, damage: Float, throwSound: SoundEvent?
+    ) : this(
+        throwable, throwVelocity, damage, throwSound?.let { BuiltInRegistries.SOUND_EVENT.wrapAsHolder(it) }
+    )
 
     companion object {
         val CODEC: Codec<ProjectileData> = RecordCodecBuilder.create {

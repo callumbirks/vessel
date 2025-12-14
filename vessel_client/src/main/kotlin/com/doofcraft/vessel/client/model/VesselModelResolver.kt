@@ -18,7 +18,7 @@ object VesselModelResolver: ModelResolver {
         if (context.id().namespace != VesselMod.MODID) return null
         VesselMod.LOGGER.info("Resolving model {}", context.id())
         val modelFile = when (context.id().path) {
-            "item/item", "item/tool", "item/projectile_weapon" -> "item/item"
+            "item/item", "item/tool", "item/projectile_weapon", "item/projectile" -> "item/item"
             "block/block" -> "block/block"
             "item/block_item" -> "item/block_item"
             else -> return null

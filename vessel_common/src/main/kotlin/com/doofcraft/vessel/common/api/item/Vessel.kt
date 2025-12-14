@@ -1,6 +1,8 @@
 package com.doofcraft.vessel.common.api.item
 
 import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
+import com.doofcraft.vessel.common.api.VesselEvents
+import com.doofcraft.vessel.common.api.event.ItemStackCreatedEvent
 import com.doofcraft.vessel.common.component.ComponentEntry
 import com.doofcraft.vessel.common.component.VesselTag
 import net.minecraft.core.component.DataComponentMap
@@ -36,6 +38,7 @@ abstract class Vessel(val tag: VesselTag): ItemStackFactory {
     override fun create(count: Int): ItemStack {
         val stack = ItemStack(baseItem, count)
         componentFactory.forEach { it.apply(stack) }
+        VesselEvents.ITEM_STACK_CREATED.emit(ItemStackCreatedEvent(this, stack))
         return stack
     }
 }

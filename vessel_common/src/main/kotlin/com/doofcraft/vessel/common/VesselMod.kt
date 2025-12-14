@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.common
 
+import com.doofcraft.vessel.common.api.VesselEvents
 import net.minecraft.server.MinecraftServer
 import org.slf4j.LoggerFactory
 
@@ -21,13 +22,13 @@ object VesselMod {
     val isClient
         get() = server == null
 
-    fun setServer(server: MinecraftServer) {
-        require(this.server == null) { "VesselMod.server has been set more than once!" }
-        this.server = server
+    fun preInitialize() {
+        VesselEvents.register()
     }
 
-    fun setInitialized() {
-        require(!this.isInitialized) { "VesselMod.isInitialized has been set more than once!" }
+    fun initialize(server: MinecraftServer?) {
+        require(!this.isInitialized) { "VesselMod has been initialized more than once!" }
+        this.server = server
         this.isInitialized = true
     }
 }

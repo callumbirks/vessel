@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.mixin;
 
-import com.doofcraft.vessel.server.api.events.VesselEvents;
+import com.doofcraft.vessel.server.api.events.VesselServerEvents;
 import com.doofcraft.vessel.server.api.events.world.BlockEntityLoadEvent;
 import com.doofcraft.vessel.common.base.VesselBaseBlockEntity;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +21,7 @@ public class LevelChunkMixin {
         if (!vessel.isInitialized()) return;
         Level level = vessel.getLevel();
         if (level instanceof ServerLevel) {
-            VesselEvents.BLOCK_ENTITY_LOAD.emit(new BlockEntityLoadEvent(vessel, (ServerLevel) level));
+            VesselServerEvents.BLOCK_ENTITY_LOAD.emit(new BlockEntityLoadEvent(vessel, (ServerLevel) level));
         }
     }
 }

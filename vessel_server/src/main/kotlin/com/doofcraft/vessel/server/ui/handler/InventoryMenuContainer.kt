@@ -1,6 +1,6 @@
 package com.doofcraft.vessel.server.ui.handler
 
-import com.doofcraft.vessel.server.api.events.VesselEvents
+import com.doofcraft.vessel.server.api.events.VesselServerEvents
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuClosedEvent
 import com.doofcraft.vessel.server.api.events.ui.ContainerMenuOpenedEvent
 import net.minecraft.network.chat.Component
@@ -45,7 +45,7 @@ class InventoryMenuContainer(val name: String, rows: Int, private val items: Mut
         }
         syncId = player.openMenu(factory).orElse(-1)
         return if (syncId != -1) {
-            VesselEvents.CONTAINER_MENU_OPENED.emit(ContainerMenuOpenedEvent(player, syncId))
+            VesselServerEvents.CONTAINER_MENU_OPENED.emit(ContainerMenuOpenedEvent(player, syncId))
             true
         } else {
             false
@@ -75,6 +75,6 @@ class InventoryMenuContainer(val name: String, rows: Int, private val items: Mut
     override fun clearContent() {}
 
     override fun stopOpen(player: Player) {
-        VesselEvents.CONTAINER_MENU_CLOSED.emit(ContainerMenuClosedEvent(player as ServerPlayer, syncId))
+        VesselServerEvents.CONTAINER_MENU_CLOSED.emit(ContainerMenuClosedEvent(player as ServerPlayer, syncId))
     }
 }

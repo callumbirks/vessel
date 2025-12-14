@@ -1,7 +1,7 @@
 package com.doofcraft.vessel.server.ui
 
 import com.doofcraft.vessel.common.VesselMod
-import com.doofcraft.vessel.server.api.events.VesselEvents
+import com.doofcraft.vessel.server.api.events.VesselServerEvents
 import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.commands.*
 import com.doofcraft.vessel.server.ui.data.DataExecutor
@@ -10,8 +10,6 @@ import com.doofcraft.vessel.server.ui.render.PlayerHeadUiComponentMapper
 import com.doofcraft.vessel.server.ui.render.UiComponentMappers
 import com.doofcraft.vessel.server.ui.render.WidgetRenderer
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import net.minecraft.server.level.ServerPlayer
 
 object UiManager {
@@ -42,10 +40,10 @@ object UiManager {
         service = MenuService(
             engine = engine, renderer = WidgetRenderer(engine), executor = DataExecutor(engine), scope
         )
-        VesselEvents.CONTAINER_MENU_OPENED.subscribe { event ->
+        VesselServerEvents.CONTAINER_MENU_OPENED.subscribe { event ->
             service.onMenuOpened(event.player, event.containerId)
         }
-        VesselEvents.CONTAINER_MENU_CLOSED.subscribe { event ->
+        VesselServerEvents.CONTAINER_MENU_CLOSED.subscribe { event ->
             service.closeMenu(event.player, event.containerId)
         }
     }

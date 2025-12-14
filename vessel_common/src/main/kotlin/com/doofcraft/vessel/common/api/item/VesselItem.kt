@@ -30,6 +30,6 @@ abstract class VesselItem(tag: VesselTag): Vessel(tag) {
     // Returning anything other than 'PASS' will prevent the default Minecraft eating behaviour
     // (play sound effect, apply effects, decrement stack)
     open fun finishUsing(stack: ItemStack, level: ServerLevel, user: LivingEntity): InteractionResultHolder<ItemStack> {
-        return InteractionResultHolder.pass(ItemStack.EMPTY)
+        return InteractionResultHolder.pass(stack)
     }
 }

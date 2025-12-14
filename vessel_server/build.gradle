@@ -38,6 +38,7 @@ dependencies {
 
 loom {
     accessWidenerPath = file("src/main/resources/vessel.accesswidener")
+    serverOnlyMinecraftJar()
 }
 
 java {

@@ -1,7 +1,6 @@
 package com.doofcraft.vessel.server.api.config
 
-import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
-import com.doofcraft.vessel.server.api.events.VesselEvents
+import com.doofcraft.vessel.server.api.events.VesselServerEvents
 import com.doofcraft.vessel.server.api.events.config.ConfigsLoadedEvent
 import net.minecraft.resources.ResourceLocation
 
@@ -20,7 +19,7 @@ object VesselConfigRegistry {
             factory.reload()
         }
         if (!configsLoaded) {
-            VesselEvents.CONFIGS_LOADED.emit(ConfigsLoadedEvent(factories.keys.toList()))
+            VesselServerEvents.CONFIGS_LOADED.emit(ConfigsLoadedEvent(factories.keys.toList()))
         }
         configsLoaded = true
     }

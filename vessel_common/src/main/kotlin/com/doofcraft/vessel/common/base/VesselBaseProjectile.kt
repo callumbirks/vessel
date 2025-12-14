@@ -1,5 +1,7 @@
 package com.doofcraft.vessel.common.base
 
+import com.doofcraft.vessel.common.api.VesselEvents
+import com.doofcraft.vessel.common.api.event.ProjectileHitEntityEvent
 import com.doofcraft.vessel.common.component.ProjectileData
 import com.doofcraft.vessel.common.registry.ModItems
 import net.minecraft.core.particles.ItemParticleOption
@@ -38,21 +40,27 @@ open class VesselBaseProjectile : ThrowableItemProjectile {
     }
 
     override fun handleEntityEvent(id: Byte) {
-        // ID 3 is entity ded. This is what spawns little snowballs when it bursts
+        // ID 3 is entity ded. This is what spawns little snow particles when it bursts
         if (id.toInt() == 3) {
             val particleOptions = getParticle()
 
+            val level = level()
+            val random = level.random
+
             repeat(8) {
-                level().addParticle(particleOptions, x, y, z, 0.0, 0.0, 0.0)
+                val vx = (random.nextDouble() - 0.5) * 0.2
+                val vy = random.nextDouble() * 0.2
+                val vz = (random.nextDouble() - 0.5) * 0.2
+                level().addParticle(particleOptions, x, y, z, vx, vy, vz)
             }
         }
     }
 
     override fun onHitEntity(result: EntityHitResult) {
-        super.onHitEntity(result)
         if (data.damage > 0f) {
             result.entity.hurt(damageSources().thrown(this, this.owner), data.damage)
         }
+        VesselEvents.PROJECTILE_HIT_ENTITY.emit(ProjectileHitEntityEvent(result, this))
     }
 
     override fun onHit(result: HitResult) {

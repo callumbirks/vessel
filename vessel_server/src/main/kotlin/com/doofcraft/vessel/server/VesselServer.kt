@@ -1,43 +1,30 @@
 package com.doofcraft.vessel.server
 
 import com.doofcraft.vessel.common.VesselMod
-import com.doofcraft.vessel.common.base.VesselBaseBlockEntity
-import com.doofcraft.vessel.common.component.VesselTag
-import com.doofcraft.vessel.common.registry.BehaviourComponents
-import com.doofcraft.vessel.common.registry.ModBlockEntities
-import com.doofcraft.vessel.common.registry.ModBlocks
-import com.doofcraft.vessel.common.registry.StackComponents
-import com.doofcraft.vessel.common.registry.ModItems
-import com.doofcraft.vessel.common.registry.VesselPackets
+import com.doofcraft.vessel.common.api.VesselEvents
+import com.doofcraft.vessel.common.registry.*
 import com.doofcraft.vessel.server.api.VesselRegistry
-import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
-import com.doofcraft.vessel.server.api.events.VesselEvents
 import com.doofcraft.vessel.server.api.async.VesselAsync
+import com.doofcraft.vessel.server.api.config.VesselConfigRegistry
+import com.doofcraft.vessel.server.api.events.VesselServerEvents
 import com.doofcraft.vessel.server.api.redis.RedisThreadedConnection
 import com.doofcraft.vessel.server.tooltip.TooltipConfig
 import com.doofcraft.vessel.server.ui.UiManager
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
-import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.minecraft.server.MinecraftServer
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.InteractionHand
-import net.minecraft.world.InteractionResult
-import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.Level
-import net.minecraft.world.phys.BlockHitResult
 
 object VesselServer: DedicatedServerModInitializer {
     lateinit var server: MinecraftServer
         private set
 
     override fun onInitializeServer() {
+        VesselMod.preInitialize()
+
         ServerLifecycleEvents.SERVER_STARTING.register { server ->
             this.server = server
-            VesselMod.setServer(server)
-            VesselMod.setInitialized()
+            VesselMod.initialize(server)
             lateInitialize()
         }
 
@@ -56,10 +43,9 @@ object VesselServer: DedicatedServerModInitializer {
         ModBlocks.register()
         ModBlockEntities.register()
         VesselPackets.register()
-        UseBlockCallback.EVENT.register(::useBlock)
         UiManager.register(VesselAsync.Scope)
         VesselDataProvider.registerDefaults()
-        VesselEvents.register()
+        VesselServerEvents.register()
 
         VesselConfigRegistry.register(VesselConfig)
         VesselConfigRegistry.register(TooltipConfig)
@@ -69,16 +55,5 @@ object VesselServer: DedicatedServerModInitializer {
     private fun lateInitialize() {
         VesselDataProvider.reloadAll()
         VesselRegistry.registerAllBehaviours()
-    }
-
-    fun useBlock(player: Player, world: Level, hand: InteractionHand, blockHitResult: BlockHitResult): InteractionResult {
-        if (player.isSpectator || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS
-        val blockEntity = world.getBlockEntity(blockHitResult.blockPos)
-        if (blockEntity == null || blockEntity !is VesselBaseBlockEntity) return InteractionResult.PASS
-        val tag = blockEntity.item.get(VesselTag.COMPONENT)
-            ?: return InteractionResult.PASS
-        val block = VesselRegistry.getBlock(tag.key)
-            ?: return InteractionResult.PASS
-        return block.use(world as ServerLevel, blockEntity, player as ServerPlayer, hand)
     }
 }

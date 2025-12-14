@@ -19,6 +19,10 @@ import net.minecraft.world.level.Level
 
 open class VesselBaseProjectileItem : VesselBaseItem(), ProjectileItem {
     override fun use(level: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
+        return throwOne(level, player, usedHand)
+    }
+
+    fun throwOne(level: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
         val itemStack = player.getItemInHand(usedHand)
         val data =
             itemStack.vesselTag()?.let { tag -> VesselBehaviourRegistry.get(tag.key, BehaviourComponents.PROJECTILE) }
@@ -56,7 +60,10 @@ open class VesselBaseProjectileItem : VesselBaseItem(), ProjectileItem {
         val tag = stack.get(VesselTag.COMPONENT)
         val data =
             tag?.let { tag -> VesselBehaviourRegistry.get(tag.key, BehaviourComponents.PROJECTILE) } ?: ProjectileData(
-                throwable = true, throwVelocity = 1.5f, damage = 0f, throwSound = SoundEvents.SNOWBALL_THROW
+                throwable = true,
+                throwVelocity = 1.5f,
+                damage = 0f,
+                throwSound = SoundEvents.SNOWBALL_THROW
             )
         val projectile = VesselBaseProjectile(data, level, pos.x(), pos.y(), pos.z())
         projectile.item = stack

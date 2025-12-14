@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderers
 object VesselClient : ClientModInitializer {
 	override fun onInitializeClient() {
         VesselMod.LOGGER.info("Initializing client...")
+        VesselMod.preInitialize()
         StackComponents.register()
         BehaviourComponents.register()
         ModItems.register()
@@ -38,7 +39,7 @@ object VesselClient : ClientModInitializer {
             VesselBlockEntityRenderer(ctx)
         }
         ClientLifecycleEvents.CLIENT_STARTED.register { client ->
-            VesselMod.setInitialized()
+            VesselMod.initialize(server = null)
         }
 	}
 }

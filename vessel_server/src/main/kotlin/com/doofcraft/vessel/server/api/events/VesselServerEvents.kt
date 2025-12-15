@@ -67,6 +67,12 @@ object VesselServerEvents {
             val item = VesselRegistry.getItem(tag.key) ?: return@subscribe
             event.result = item.finishUsing(event.stack, event.level as ServerLevel, event.user)
         }
+        VesselEvents.ITEM_SLOT_CLICKED.subscribe { event ->
+            val tag = event.stack.vesselTag() ?: return@subscribe
+            val item = VesselRegistry.getItem(tag.key) ?: return@subscribe
+            event.result =
+                item.onClicked(event.player as ServerPlayer, event.slot, event.action, event.stack, event.otherStack)
+        }
         VesselEvents.PROJECTILE_HIT_ENTITY.subscribe { event ->
             val tag = event.projectile.item.vesselTag() ?: return@subscribe
             val item = VesselRegistry.getOfType<VesselProjectile>(tag.key) ?: return@subscribe

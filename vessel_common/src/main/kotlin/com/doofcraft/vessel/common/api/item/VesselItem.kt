@@ -8,9 +8,11 @@ import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.InteractionResultHolder
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.inventory.ClickAction
+import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
 
-abstract class VesselItem(tag: VesselTag): Vessel(tag) {
+abstract class VesselItem(tag: VesselTag) : Vessel(tag) {
     override val baseItem = ModItems.ITEM
 
     open fun use(
@@ -19,11 +21,15 @@ abstract class VesselItem(tag: VesselTag): Vessel(tag) {
         return InteractionResultHolder.pass(stack)
     }
 
-    open fun useOnEntity(stack: ItemStack, player: ServerPlayer, entity: LivingEntity, hand: InteractionHand): InteractionResult {
+    open fun useOnEntity(
+        stack: ItemStack, player: ServerPlayer, entity: LivingEntity, hand: InteractionHand
+    ): InteractionResult {
         return InteractionResult.PASS
     }
 
-    open fun onClicked(stack: ItemStack, otherStack: ItemStack, player: ServerPlayer): InteractionResult {
+    open fun onClicked(
+        player: ServerPlayer, slot: Slot, action: ClickAction, stack: ItemStack, otherStack: ItemStack
+    ): InteractionResult {
         return InteractionResult.PASS
     }
 

@@ -1,12 +1,17 @@
 package com.doofcraft.vessel.common.base
 
+import com.doofcraft.vessel.common.api.VesselEvents
+import com.doofcraft.vessel.common.api.event.ItemSlotClickedEvent
 import com.doofcraft.vessel.common.util.ItemHelpers
 import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.InteractionResultHolder
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.SlotAccess
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.ClickAction
+import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.TooltipFlag
@@ -38,6 +43,20 @@ open class VesselBaseItem() : Item(Properties()) {
                 level, player, usedHand
             )
         }
+    }
+
+    override fun overrideOtherStackedOnMe(
+        stack: ItemStack,
+        other: ItemStack,
+        slot: Slot,
+        action: ClickAction,
+        player: Player,
+        access: SlotAccess
+    ): Boolean {
+        VesselEvents.ITEM_SLOT_CLICKED.post(ItemSlotClickedEvent(player, slot, action, stack, other)) { event ->
+            if (event.result.consumesAction()) return true
+        }
+        return super.overrideOtherStackedOnMe(stack, other, slot, action, player, access)
     }
 
     override fun interactLivingEntity(

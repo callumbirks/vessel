@@ -4,6 +4,7 @@ import com.doofcraft.vessel.common.api.event.BlockDestroyedEvent
 import com.doofcraft.vessel.common.api.event.BlockInteractEvent
 import com.doofcraft.vessel.common.api.event.BlockPlacedEvent
 import com.doofcraft.vessel.common.api.event.ItemFinishUsingEvent
+import com.doofcraft.vessel.common.api.event.ItemSlotClickedEvent
 import com.doofcraft.vessel.common.api.event.ItemStackCreatedEvent
 import com.doofcraft.vessel.common.api.event.ItemUseEvent
 import com.doofcraft.vessel.common.api.event.ItemUseOnEntityEvent
@@ -35,6 +36,8 @@ object VesselEvents {
     val ITEM_USE_ON_ENTITY = EventObservable<ItemUseOnEntityEvent>()
 
     val ITEM_FINISH_USING = EventObservable<ItemFinishUsingEvent>()
+
+    val ITEM_SLOT_CLICKED = EventObservable<ItemSlotClickedEvent>()
 
     val PROJECTILE_HIT_ENTITY = SimpleObservable<ProjectileHitEntityEvent>()
 

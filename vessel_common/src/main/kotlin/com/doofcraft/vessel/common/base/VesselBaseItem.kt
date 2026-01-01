@@ -18,7 +18,7 @@ import net.minecraft.world.item.TooltipFlag
 import net.minecraft.world.item.UseAnim
 import net.minecraft.world.level.Level
 
-open class VesselBaseItem() : Item(Properties()) {
+open class VesselBaseItem(properties: Properties = Properties()) : Item(properties) {
     override fun getDescriptionId(stack: ItemStack): String? {
         return ItemHelpers.getDescriptionId(stack) { super.getDescriptionId(stack) }
     }

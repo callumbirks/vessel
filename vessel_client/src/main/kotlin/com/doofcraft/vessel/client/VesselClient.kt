@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.client
 
+import com.doofcraft.vessel.client.model.VesselArmorRenderer
 import com.doofcraft.vessel.client.model.VesselBlockEntityRenderer
 import com.doofcraft.vessel.client.model.VesselModelResolver
 import com.doofcraft.vessel.common.VesselMod
@@ -16,11 +17,12 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin
+import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers
 
 @Environment(EnvType.CLIENT)
 object VesselClient : ClientModInitializer {
-	override fun onInitializeClient() {
+    override fun onInitializeClient() {
         VesselMod.LOGGER.info("Initializing client...")
         VesselMod.preInitialize()
         StackComponents.register()
@@ -31,6 +33,13 @@ object VesselClient : ClientModInitializer {
         VesselPackets.register()
         TooltipRegistry.registerClient()
         VesselBehaviourRegistry.registerClient()
+        ArmorRenderer.register(
+            VesselArmorRenderer,
+            ModItems.ARMOR_HELMET,
+            ModItems.ARMOR_CHESTPLATE,
+            ModItems.ARMOR_LEGGINGS,
+            ModItems.ARMOR_BOOTS
+        )
         ModelLoadingPlugin.register { ctx ->
             VesselMod.LOGGER.info("Registering ModelLoadingPlugin...")
             ctx.resolveModel().register(VesselModelResolver)
@@ -41,5 +50,5 @@ object VesselClient : ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STARTED.register { client ->
             VesselMod.initialize(server = null)
         }
-	}
+    }
 }

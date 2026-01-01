@@ -12,13 +12,13 @@ import net.minecraft.client.resources.model.UnbakedModel
 import net.minecraft.resources.ResourceLocation
 
 @Environment(EnvType.CLIENT)
-object VesselModelResolver: ModelResolver {
+object VesselModelResolver : ModelResolver {
     @OptIn(ExperimentalSerializationApi::class)
     override fun resolveModel(context: ModelResolver.Context): UnbakedModel? {
         if (context.id().namespace != VesselMod.MODID) return null
         VesselMod.LOGGER.info("Resolving model {}", context.id())
         val modelFile = when (context.id().path) {
-            "item/item", "item/tool", "item/projectile_weapon", "item/projectile" -> "item/item"
+            "item/item", "item/tool", "item/projectile_weapon", "item/projectile", "item/armor_helmet", "item/armor_chestplate", "item/armor_leggings", "item/armor_boots" -> "item/item"
             "block/block" -> "block/block"
             "item/block_item" -> "item/block_item"
             else -> return null

@@ -25,11 +25,11 @@ object VesselConfigCommand {
     private fun runReload(context: CommandContext<CommandSourceStack>): Int {
         val configId = ResourceLocationArgument.getId(context, "identifier")
         val result = VesselConfigRegistry.reload(configId)
-        if (result) {
+        if (result.isSuccess) {
             context.source.sendSuccess({ Component.literal("Config '$configId' reloaded.") }, true)
             return 0
         } else {
-            context.source.sendFailure(Component.literal("No such config '$configId'."))
+            context.source.sendFailure(Component.literal("Failed to reload config '$configId': ${result.failure()}"))
             return -1
         }
     }

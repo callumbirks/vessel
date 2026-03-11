@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui.render
 
+import com.doofcraft.minedown.MineDown
 import com.doofcraft.vessel.common.api.VesselIdentifier
 import com.doofcraft.vessel.common.api.item.ItemStackFactory
 import com.doofcraft.vessel.common.component.MenuButton
@@ -7,7 +8,6 @@ import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.server.api.VesselRegistry
 import com.doofcraft.vessel.server.util.isEmpty
 import com.doofcraft.vessel.server.util.toText
-import de.themoep.minedown.adventure.MineDown
 import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.CommonColors

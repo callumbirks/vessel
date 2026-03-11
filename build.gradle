@@ -12,8 +12,6 @@ plugins {
 repositories {
     mavenCentral()
     maven { url "https://maven.parchmentmc.org" }
-    // for MineDown:
-    maven { url "https://repo.minebench.de" }
 }
 
 subprojects {
@@ -33,8 +31,10 @@ subprojects {
     repositories {
         mavenCentral()
         maven { url "https://maven.parchmentmc.org" }
-        // for MineDown:
-        maven { url "https://repo.minebench.de" }
+        maven {
+            url 'https://jitpack.io'
+            content { includeGroup 'com.github.callumbirks' }
+        }
         maven { url "https://api.modrinth.com/maven" }
     }
 

@@ -2,6 +2,7 @@ package com.doofcraft.vessel.server.api.config
 
 import com.doofcraft.vessel.server.api.events.VesselServerEvents
 import com.doofcraft.vessel.server.api.events.config.ConfigsLoadedEvent
+import com.doofcraft.vessel.server.api.data.Result
 import net.minecraft.resources.ResourceLocation
 
 object VesselConfigRegistry {
@@ -30,11 +31,11 @@ object VesselConfigRegistry {
         }
     }
 
-    fun reload(id: ResourceLocation): Boolean {
-        val factory = factories[id] ?: return false
+    fun reload(id: ResourceLocation): Result<Unit> {
+        val factory = factories[id] ?: return Result.failure("No such config '$id'")
         factory.reload()
-        factory.validate()
-        return true
+        factory.validate().then { return Result.failure(it) }
+        return Result.success(Unit)
     }
 
     fun configIds(): Collection<ResourceLocation> = factories.keys

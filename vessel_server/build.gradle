@@ -25,7 +25,7 @@ dependencies {
     implementation(project(path: ":vessel_common", configuration: "namedElements"))
 
     implementation "net.kyori:adventure-api:${project.adventure_api_version}"
-    transitiveInclude(implementation "de.themoep:minedown-adventure:${project.minedown_version}")
+    implementation "com.github.callumbirks:doofcraft-minedown:${project.minedown_version}"
     modImplementation "net.kyori:adventure-platform-fabric:${project.adventure_fabric_version}"
 
     // Redis

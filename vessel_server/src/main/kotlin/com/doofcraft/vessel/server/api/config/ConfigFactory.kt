@@ -50,9 +50,14 @@ interface ConfigFactory<T> {
         reload(CONFIG)
     }
 
-    fun validate() {
-        validate(CONFIG).then(
-            onSuccess = { VesselMod.LOGGER.info("Validated $id config successfully.") },
-            onFailure = { VesselMod.LOGGER.warn("Failed to validate $id config: $it") })
+    fun validate(): Result<Unit> {
+        val result = validate(CONFIG)
+        if (result.isSuccess) {
+            VesselMod.LOGGER.info("Validated $id config successfully.")
+            return result
+        }
+
+        VesselMod.LOGGER.warn("Failed to validate $id config: ${result.failure()}")
+        return result
     }
 }

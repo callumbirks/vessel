@@ -2,6 +2,7 @@ package com.doofcraft.vessel.common.registry
 
 import com.doofcraft.vessel.common.component.AnimatedUseComponent
 import com.doofcraft.vessel.common.component.ArmorRenderTextures
+import com.doofcraft.vessel.common.component.BlockDoesDropComponent
 import com.doofcraft.vessel.common.component.BlockShapeComponent
 import com.doofcraft.vessel.common.component.ProjectileData
 import com.doofcraft.vessel.common.component.ProjectileWeaponData
@@ -44,5 +45,11 @@ object BehaviourComponents : SimpleRegistry<Registry<DataComponentType<*>>, Data
     val ARMOR_RENDER_TEXTURES: DataComponentType<ArmorRenderTextures> = create(
         "armor_render_textures",
         DataComponentType.builder<ArmorRenderTextures>().persistent(ArmorRenderTextures.CODEC).build()
+    )
+
+    @JvmField
+    val BLOCK_DOES_DROP: DataComponentType<BlockDoesDropComponent> = create(
+        "block_does_drop",
+        DataComponentType.builder<BlockDoesDropComponent>().persistent(BlockDoesDropComponent.CODEC).build()
     )
 }

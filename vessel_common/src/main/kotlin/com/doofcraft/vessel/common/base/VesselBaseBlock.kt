@@ -1,10 +1,13 @@
 package com.doofcraft.vessel.common.base
 
+import com.doofcraft.vessel.common.api.VesselBehaviourRegistry
 import com.doofcraft.vessel.common.api.VesselEvents
 import com.doofcraft.vessel.common.api.event.BlockDestroyedEvent
 import com.doofcraft.vessel.common.api.event.BlockInteractEvent
 import com.doofcraft.vessel.common.api.event.BlockPlacedEvent
+import com.doofcraft.vessel.common.component.BlockDoesDropComponent
 import com.doofcraft.vessel.common.component.VesselTag
+import com.doofcraft.vessel.common.registry.BehaviourComponents
 import com.mojang.serialization.MapCodec
 import net.minecraft.client.particle.BreakingItemParticle
 import net.minecraft.core.BlockPos
@@ -18,10 +21,13 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.LevelReader
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.RenderShape
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.storage.loot.LootParams
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.shapes.CollisionContext
 import net.minecraft.world.phys.shapes.Shapes
@@ -36,7 +42,7 @@ class VesselBaseBlock(properties: Properties) : BaseEntityBlock(properties) {
 
     override fun setPlacedBy(level: Level, pos: BlockPos, state: BlockState, placer: LivingEntity?, stack: ItemStack) {
         super.setPlacedBy(level, pos, state, placer, stack)
-        val be = level.getBlockEntity(pos) as VesselBaseBlockEntity? ?: return
+        val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity? ?: return
         VesselEvents.BLOCK_PLACED.emit(BlockPlacedEvent(level, pos, placer, be))
     }
 
@@ -122,5 +128,22 @@ class VesselBaseBlock(properties: Properties) : BaseEntityBlock(properties) {
                 vx, vy, vz
             )
         }
+    }
+
+    override fun getDrops(state: BlockState, params: LootParams.Builder): List<ItemStack?>? {
+        val be = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY) as? VesselBaseBlockEntity
+            ?: return super.getDrops(state, params)
+        val stack = be.item
+        val doesDrop = VesselBehaviourRegistry.get(be.tag.key, BehaviourComponents.BLOCK_DOES_DROP)
+        return if (doesDrop != null && doesDrop.doesDrop && !stack.isEmpty) {
+            mutableListOf(stack.copyWithCount(1))
+        } else {
+            super.getDrops(state, params)
+        }
+    }
+
+    override fun getCloneItemStack(level: LevelReader, pos: BlockPos, state: BlockState): ItemStack? {
+        val be = level.getBlockEntity(pos) as? VesselBaseBlockEntity ?: return null
+        return be.item.copyWithCount(1)
     }
 }

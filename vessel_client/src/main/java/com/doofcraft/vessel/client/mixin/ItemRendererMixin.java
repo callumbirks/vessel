@@ -45,19 +45,6 @@ public class ItemRendererMixin {
         VesselItemRenderHandler handler = VesselItemRenderRegistry.get(tag.key);
         if (handler == null) return;
 
-        if (tag.key.equals("raids.obelisk")) {
-            VesselMod.LOGGER.info(
-                "obelisk item hook displayContext={} modelClass={} particleIcon={} transform={} poseTranslation=({}, {}, {})",
-                displayContext,
-                model.getClass().getName(),
-                model.getParticleIcon().contents().name(),
-                model.getTransforms().getTransform(displayContext),
-                poseStack.last().pose().m30(),
-                poseStack.last().pose().m31(),
-                poseStack.last().pose().m32()
-            );
-        }
-
         boolean handled = handler.render(
             new VesselItemRenderContext(
                 stack,

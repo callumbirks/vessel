@@ -38,6 +38,11 @@ class VesselBakedModel(
     private var hitCounter = 0
     private var missCounter = 0
 
+    internal fun mergedWith(extraOverrides: List<VesselBakedOverride>): VesselBakedModel {
+        if (extraOverrides.isEmpty()) return this
+        return VesselBakedModel(fallback, extraOverrides + overrides)
+    }
+
     override fun getQuads(state: BlockState?, direction: Direction?, random: RandomSource): List<BakedQuad> {
         return fallback.getQuads(state, direction, random)
     }
@@ -109,17 +114,6 @@ class VesselBakedModel(
 
             val override = overrides.firstOrNull { it.predicate.test(stack) }
             val result = override?.model ?: fallback
-            if (stack.vesselTag()?.key == "raids.obelisk") {
-                val transforms = result.transforms
-                VesselMod.LOGGER.info(
-                    "obelisk chosen model matchedOverride={} modelClass={} particleIcon={} guiIsNoTransform={} firstPersonRightHandIsNoTransform={}",
-                    override != null,
-                    result.javaClass.name,
-                    result.particleIcon.contents().name(),
-                    transforms.getTransform(ItemDisplayContext.GUI) == ItemTransform.NO_TRANSFORM,
-                    transforms.getTransform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) == ItemTransform.NO_TRANSFORM,
-                )
-            }
             cache[r] = result
             timer += (System.currentTimeMillis() - now)
             return result

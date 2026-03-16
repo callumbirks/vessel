@@ -61,11 +61,6 @@ class VesselUnbakedModel(
 
         this.overrides.forEach { override ->
             val model: UnbakedModel? = resolver.apply(override.model)
-            VesselMod.LOGGER.info(
-                "override resolveParents modelId={} resolvedClass={}",
-                override.model,
-                model?.javaClass?.name,
-            )
             if (model != null && !Objects.equals(model, this)) {
                 model.resolveParents(resolver)
             }
@@ -80,19 +75,14 @@ class VesselUnbakedModel(
         val bakedParent =
             parent.bake(baker, spriteGetter, state)
                 ?: throw IllegalStateException("VesselBakedModel must have a parent")
-        if (bakedParent is VesselBakedModel) return bakedParent
-        val bakedMap = overrides.map {
+        val bakedOverrides = overrides.map {
             val bakedOverrideModel = baker.bake(it.model, state)!!
-            val transforms = bakedOverrideModel.transforms
-            VesselMod.LOGGER.info(
-                "override baked modelId={} modelClass={} particleIcon={} guiIsNoTransform={}",
-                it.model,
-                bakedOverrideModel.javaClass.name,
-                bakedOverrideModel.particleIcon.contents().name(),
-                transforms.getTransform(ItemDisplayContext.GUI) == ItemTransform.NO_TRANSFORM,
-            )
             VesselBakedOverride(it.predicate, bakedOverrideModel)
         }
-        return VesselBakedModel(bakedParent, bakedMap)
+        return if (bakedParent is VesselBakedModel) {
+            bakedParent.mergedWith(bakedOverrides)
+        } else {
+            VesselBakedModel(bakedParent, bakedOverrides)
+        }
     }
 }

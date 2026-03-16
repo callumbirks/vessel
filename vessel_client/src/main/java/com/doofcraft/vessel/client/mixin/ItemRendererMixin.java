@@ -3,11 +3,13 @@ package com.doofcraft.vessel.client.mixin;
 import com.doofcraft.vessel.client.api.render.VesselItemRenderContext;
 import com.doofcraft.vessel.client.api.render.VesselItemRenderHandler;
 import com.doofcraft.vessel.client.api.render.VesselItemRenderRegistry;
+import com.doofcraft.vessel.common.VesselMod;
 import com.doofcraft.vessel.common.component.VesselTag;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemDisplayContext;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,6 +44,19 @@ public class ItemRendererMixin {
 
         VesselItemRenderHandler handler = VesselItemRenderRegistry.get(tag.key);
         if (handler == null) return;
+
+        if (tag.key.equals("raids.obelisk")) {
+            VesselMod.LOGGER.info(
+                "obelisk item hook displayContext={} modelClass={} particleIcon={} transform={} poseTranslation=({}, {}, {})",
+                displayContext,
+                model.getClass().getName(),
+                model.getParticleIcon().contents().name(),
+                model.getTransforms().getTransform(displayContext),
+                poseStack.last().pose().m30(),
+                poseStack.last().pose().m31(),
+                poseStack.last().pose().m32()
+            );
+        }
 
         boolean handled = handler.render(
             new VesselItemRenderContext(

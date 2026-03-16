@@ -1,11 +1,14 @@
 package com.doofcraft.vessel.client.model
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.client.util.collections.LruCache
 import com.doofcraft.vessel.client.util.hash.Fnv64
 import com.doofcraft.vessel.common.predicate.resolveComponent
 import com.doofcraft.vessel.common.predicate.toJson
+import com.doofcraft.vessel.common.util.vesselTag
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
+import net.minecraft.client.renderer.block.model.ItemTransform
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.client.renderer.block.model.BakedQuad
 import net.minecraft.client.renderer.block.model.ItemOverrides
@@ -16,6 +19,7 @@ import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.util.RandomSource
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.state.BlockState
 
@@ -105,6 +109,17 @@ class VesselBakedModel(
 
             val override = overrides.firstOrNull { it.predicate.test(stack) }
             val result = override?.model ?: fallback
+            if (stack.vesselTag()?.key == "raids.obelisk") {
+                val transforms = result.transforms
+                VesselMod.LOGGER.info(
+                    "obelisk chosen model matchedOverride={} modelClass={} particleIcon={} guiIsNoTransform={} firstPersonRightHandIsNoTransform={}",
+                    override != null,
+                    result.javaClass.name,
+                    result.particleIcon.contents().name(),
+                    transforms.getTransform(ItemDisplayContext.GUI) == ItemTransform.NO_TRANSFORM,
+                    transforms.getTransform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) == ItemTransform.NO_TRANSFORM,
+                )
+            }
             cache[r] = result
             timer += (System.currentTimeMillis() - now)
             return result

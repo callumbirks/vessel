@@ -11,9 +11,11 @@ import kotlinx.serialization.UseSerializers
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.renderer.block.model.BlockModel
+import net.minecraft.client.renderer.block.model.ItemTransform
 import net.minecraft.client.renderer.texture.TextureAtlasSprite
 import net.minecraft.client.resources.model.*
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.ItemDisplayContext
 import java.util.*
 import java.util.function.Function
 
@@ -58,8 +60,13 @@ class VesselUnbakedModel(
         parentModel.resolveParents(resolver)
 
         this.overrides.forEach { override ->
-            val model = resolver.apply(override.model)
-            if (!Objects.equals(model, this)) {
+            val model: UnbakedModel? = resolver.apply(override.model)
+            VesselMod.LOGGER.info(
+                "override resolveParents modelId={} resolvedClass={}",
+                override.model,
+                model?.javaClass?.name,
+            )
+            if (model != null && !Objects.equals(model, this)) {
                 model.resolveParents(resolver)
             }
         }
@@ -74,7 +81,18 @@ class VesselUnbakedModel(
             parent.bake(baker, spriteGetter, state)
                 ?: throw IllegalStateException("VesselBakedModel must have a parent")
         if (bakedParent is VesselBakedModel) return bakedParent
-        val bakedMap = overrides.map { VesselBakedOverride(it.predicate, baker.bake(it.model, state)!!) }
+        val bakedMap = overrides.map {
+            val bakedOverrideModel = baker.bake(it.model, state)!!
+            val transforms = bakedOverrideModel.transforms
+            VesselMod.LOGGER.info(
+                "override baked modelId={} modelClass={} particleIcon={} guiIsNoTransform={}",
+                it.model,
+                bakedOverrideModel.javaClass.name,
+                bakedOverrideModel.particleIcon.contents().name(),
+                transforms.getTransform(ItemDisplayContext.GUI) == ItemTransform.NO_TRANSFORM,
+            )
+            VesselBakedOverride(it.predicate, bakedOverrideModel)
+        }
         return VesselBakedModel(bakedParent, bakedMap)
     }
 }

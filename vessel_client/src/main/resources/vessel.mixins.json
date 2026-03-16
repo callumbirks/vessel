@@ -3,7 +3,6 @@
     "package": "com.doofcraft.vessel.client.mixin",
     "compatibilityLevel": "JAVA_21",
     "client": [
-        "BlockEntityWithoutLevelRendererMixin",
         "ItemRendererMixin"
     ],
     "injectors": {

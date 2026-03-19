@@ -33,7 +33,7 @@ class InventoryMenuContainer(val name: String, rows: Int, private val items: Mut
     }
 
     /** Do **NOT** use directly! Use `InventoryMenuManager.openMenu(player, menu)` instead. */
-    fun open(player: ServerPlayer): Boolean {
+    fun open(player: ServerPlayer): Int? {
         val factory = object : MenuProvider {
             override fun getDisplayName(): Component = Component.literal(name)
 
@@ -46,9 +46,9 @@ class InventoryMenuContainer(val name: String, rows: Int, private val items: Mut
         syncId = player.openMenu(factory).orElse(-1)
         return if (syncId != -1) {
             VesselServerEvents.CONTAINER_MENU_OPENED.emit(ContainerMenuOpenedEvent(player, syncId))
-            true
+            syncId
         } else {
-            false
+            null
         }
     }
 

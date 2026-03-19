@@ -12,6 +12,30 @@ import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
 
+internal enum class UiSlotClickDecision {
+    PASS_THROUGH,
+    TRIGGER_BUTTON,
+    REJECT,
+}
+
+internal object UiSlotClickPolicy {
+    fun decide(
+        slotId: Int,
+        menuSize: Int,
+        clickType: ClickType,
+        carriedEmpty: Boolean,
+        hasButton: Boolean
+    ): UiSlotClickDecision {
+        if (slotId < 0 || slotId >= menuSize) {
+            return UiSlotClickDecision.PASS_THROUGH
+        }
+        if (clickType == ClickType.PICKUP && carriedEmpty && hasButton) {
+            return UiSlotClickDecision.TRIGGER_BUTTON
+        }
+        return UiSlotClickDecision.REJECT
+    }
+}
+
 class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: Inventory, inventory: Container) : ChestMenu(
     genericHandler(inventory.containerSize),
     syncId,
@@ -45,23 +69,26 @@ class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: In
     }
 
     override fun clicked(slotId: Int, button: Int, clickType: ClickType, player: Player) {
-        // Only allow interaction outside the inventory slots
-        if (slotId >= 0 && slotId < container.containerSize) {
-            // A pickup action could also be the player dropping items from their cursor into the inventory,
-            // if they do this we need to return the item to the player's inventory
-            if (clickType == ClickType.PICKUP) {
-                if (!carried.isEmpty) {
-                    // If the cursor stack is not empty, make sure it doesn't change.
-                    setRemoteCarried(carried)
-                    return
-                }
-                // If the cursor stack is empty, this could be a button press.
-                val stack = container.getItem(slotId)
+        val stack = if (slotId >= 0 && slotId < container.containerSize) container.getItem(slotId) else ItemStack.EMPTY
+        val decision = UiSlotClickPolicy.decide(
+            slotId = slotId,
+            menuSize = container.containerSize,
+            clickType = clickType,
+            carriedEmpty = carried.isEmpty,
+            hasButton = stack[StackComponents.MENU_BUTTON] != null
+        )
+
+        when (decision) {
+            UiSlotClickDecision.PASS_THROUGH -> super.clicked(slotId, button, clickType, player)
+            UiSlotClickDecision.TRIGGER_BUTTON -> {
                 val buttonData = stack[StackComponents.MENU_BUTTON] ?: return
                 UiManager.service.clickButton(player as ServerPlayer, buttonData)
+                broadcastFullState()
+            }
+            UiSlotClickDecision.REJECT -> {
+                broadcastFullState()
             }
         }
-        super.clicked(slotId, button, clickType, player)
     }
 
     companion object {

@@ -68,7 +68,7 @@ object VesselAsync {
         return VesselServer.server.isSameThread
     }
 
-    suspend fun <T> runOnMainThread(block: () -> T): T {
+    suspend fun <T> runOnMainThread(block: suspend () -> T): T {
         return if (isMainThread()) {
             block()
         } else {

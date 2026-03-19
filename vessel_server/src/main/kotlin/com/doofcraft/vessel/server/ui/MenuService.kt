@@ -1,6 +1,7 @@
 package com.doofcraft.vessel.server.ui
 
 import com.doofcraft.vessel.common.component.MenuButton
+import com.doofcraft.vessel.server.api.async.VesselAsync
 import com.doofcraft.vessel.server.ui.cmd.CommandBus
 import com.doofcraft.vessel.server.ui.cmd.NodeCache
 import com.doofcraft.vessel.server.ui.cmd.UiContext
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -42,13 +44,20 @@ class MenuService(
         val plan: DataPlan,
         val ctx: UiContext,
         val cache: NodeCache,
-        val job: Job,
-        var syncId: Int = -1,
+        val syncTracker: MenuSessionSyncTracker = MenuSessionSyncTracker(),
+        var job: Job? = null,
     )
 
     private val open = ConcurrentHashMap<String, OpenMenu>() // playerUuid -> OpenMenu
     private val locks = ConcurrentHashMap<String, Mutex>()
     private fun lockFor(playerUuid: String) = locks.computeIfAbsent(playerUuid) { Mutex() }
+    private suspend fun <T> withPlayerLock(playerUuid: String, action: suspend () -> T): T = lockFor(playerUuid).withLock {
+        action()
+    }
+    private fun launchPlayerLifecycle(playerUuid: String, action: suspend () -> Unit) = scope.launch {
+        withPlayerLock(playerUuid, action)
+    }
+    private suspend fun <T> onMainThread(action: suspend () -> T): T = VesselAsync.runOnMainThread(action)
 
     fun openMenu(player: ServerPlayer, def: MenuDefinition, params: Map<String, Any?>) {
         def.openParams?.let { req ->
@@ -61,71 +70,51 @@ class MenuService(
         val cache = NodeCache()
         val playerUuid = player.uuid.toString()
 
-        scope.launch {
-            val mtx = lockFor(playerUuid)
-            mtx.withLock {
-                open.remove(playerUuid)?.job?.cancelAndJoin()
+        launchPlayerLifecycle(playerUuid) {
+            cancelEntry(open.remove(playerUuid))
 
-                val job = scope.launch {
-                    val scope = ctx.toScope()
-                    for ((k, v) in plan.def.state) {
-                        val value = JsonTemplater.templatizeString(v, engine, scope)
-                        if (value != null) ctx.state[k] = value
-                        else ctx.state.remove(k)
-                    }
-                    refreshOnce(player, plan, ctx, cache)
-                    val interval = def.refresh?.intervalMs ?: 0L
-                    if (interval > 0) {
-                        while (isActive) {
-                            delay(interval)
-                            refreshOnce(player, plan, ctx, cache, nodes = def.refresh!!.nodes)
-                        }
-                    }
-                }
+            val entry = OpenMenu(def, plan, ctx, cache)
+            open[playerUuid] = entry
 
-                open[playerUuid] = OpenMenu(def, plan, ctx, cache, job)
+            initializeState(entry)
+            if (!refreshOnce(player, entry)) {
+                open.remove(playerUuid)
+                return@launchPlayerLifecycle
             }
+
+            entry.job = startRefreshLoop(player, entry)
         }
     }
 
     fun refreshMenu(player: ServerPlayer) {
-        scope.launch {
-            lockFor(player.stringUUID).withLock {
-                val menu = open[player.stringUUID]
-                    ?: return@launch
-                scope.launch {
-                    refreshOnce(player, menu.plan, menu.ctx, menu.cache)
-                }
-            }
-        }
-    }
-
-    internal fun onMenuOpened(player: ServerPlayer, syncId: Int) {
-        scope.launch {
-            lockFor(player.stringUUID).withLock {
-                open[player.stringUUID]?.syncId = syncId
+        launchPlayerLifecycle(player.stringUUID) {
+            val menu = open[player.stringUUID]
+                ?: return@launchPlayerLifecycle
+            if (!refreshOnce(player, menu)) {
+                open.remove(player.stringUUID)
+                cancelEntry(menu)
             }
         }
     }
 
     fun closeMenu(player: ServerPlayer, withSyncId: Int? = null) {
-        scope.launch {
-            lockFor(player.stringUUID).withLock {
-                val menu = open[player.stringUUID]
-                    ?: return@launch
-                if (withSyncId == null || withSyncId == menu.syncId) {
-                    open.remove(player.stringUUID)
-                    menu.job.cancelAndJoin()
-                }
+        launchPlayerLifecycle(player.stringUUID) {
+            val menu = open[player.stringUUID]
+                ?: return@launchPlayerLifecycle
+            if (menu.syncTracker.shouldClose(withSyncId)) {
+                open.remove(player.stringUUID)
+                cancelEntry(menu)
             }
         }
     }
 
     fun clickButton(player: ServerPlayer, menuButton: MenuButton) {
-        val ctx = getContext(player)
-            ?: return
-        scope.launch {
-            CommandBus.run(menuButton.cmd, ctx, null, menuButton.args)
+        launchPlayerLifecycle(player.stringUUID) {
+            val menu = open[player.stringUUID]
+                ?: return@launchPlayerLifecycle
+            onMainThread {
+                CommandBus.run(menuButton.cmd, menu.ctx, null, menuButton.args)
+            }
         }
     }
 
@@ -133,36 +122,78 @@ class MenuService(
         return open[player.uuid.toString()]?.ctx
     }
 
+    private suspend fun initializeState(menu: OpenMenu) {
+        val scope = menu.ctx.toScope()
+        for ((k, v) in menu.plan.def.state) {
+            val value = JsonTemplater.templatizeString(v, engine, scope)
+            if (value != null) menu.ctx.state[k] = value
+            else menu.ctx.state.remove(k)
+        }
+    }
+
+    private fun startRefreshLoop(player: ServerPlayer, menu: OpenMenu): Job? {
+        val interval = menu.def.refresh?.intervalMs ?: 0L
+        if (interval <= 0) return null
+        return scope.launch {
+            while (isActive) {
+                delay(interval)
+                val shouldContinue = withPlayerLock(player.stringUUID) {
+                    val activeMenu = open[player.stringUUID]
+                    if (activeMenu !== menu) {
+                        return@withPlayerLock false
+                    }
+                    val refreshed = refreshOnce(player, menu, nodes = menu.def.refresh?.nodes)
+                    if (!refreshed) {
+                        open.remove(player.stringUUID)
+                    }
+                    refreshed
+                }
+                if (!shouldContinue) break
+            }
+        }
+    }
+
+    private suspend fun cancelEntry(menu: OpenMenu?) {
+        val job = menu?.job ?: return
+        if (job != currentCoroutineContext()[Job]) {
+            job.cancelAndJoin()
+        } else {
+            job.cancel()
+        }
+    }
+
     private suspend fun refreshOnce(
-        player: ServerPlayer, plan: DataPlan, ctx: UiContext, cache: NodeCache, nodes: List<String>? = null
-    ) {
+        player: ServerPlayer,
+        menu: OpenMenu,
+        nodes: List<String>? = null
+    ): Boolean = onMainThread {
         // TODO: if nodes == null -> full execution; else reuse previous values and recompute only what's necessary
-        executor.executeAll(plan, ctx, cache)
-        val scope = ctx.toScope()
-        val renderedTitle = engine.renderTemplate(plan.def.title, scope)
-        val rendered = renderer.renderAll(plan.def, renderedTitle, ctx, player)
+        executor.executeAll(menu.plan, menu.ctx, menu.cache)
+        val scope = menu.ctx.toScope()
+        val renderedTitle = engine.renderTemplate(menu.plan.def.title, scope)
+        val rendered = renderer.renderAll(menu.plan.def, renderedTitle, menu.ctx, player)
 
         val openMenu =
             (player.containerMenu as? GenericInventoryScreenHandler)?.container as? InventoryMenuContainer ?: run {
                 if (nodes == null) {
-                    // this is the first refresh, open the menu
-                    val m = InventoryMenuContainer(renderedTitle, plan.def.rows, rendered.items.toMutableMap())
-                    m.open(player)
-                    m
+                    val initialMenu = InventoryMenuContainer(renderedTitle, menu.plan.def.rows, rendered.items.toMutableMap())
+                    val syncId = initialMenu.open(player) ?: return@onMainThread false
+                    menu.syncTracker.replaceWith(syncId)
+                    return@onMainThread true
                 } else {
-                    // this is a subsequent refresh, so the player closed the menu, return
-                    return
+                    return@onMainThread false
                 }
             }
 
-        if (openMenu.name == renderedTitle && openMenu.size == plan.def.rows * 9) {
-            // If the name has stayed the same we can just patch the items
+        if (openMenu.name == renderedTitle && openMenu.size == menu.plan.def.rows * 9) {
             openMenu.patchItems(rendered.items)
+            player.containerMenu.broadcastChanges()
+            true
         } else {
-            // Re-open if the name has changed
-            // TODO: Maybe we can do some Packet trickery to avoid this?
-            val newMenu = InventoryMenuContainer(renderedTitle, plan.def.rows, rendered.items.toMutableMap())
-            newMenu.open(player)
+            val newMenu = InventoryMenuContainer(renderedTitle, menu.plan.def.rows, rendered.items.toMutableMap())
+            val syncId = newMenu.open(player) ?: return@onMainThread false
+            menu.syncTracker.replaceWith(syncId)
+            true
         }
     }
 }

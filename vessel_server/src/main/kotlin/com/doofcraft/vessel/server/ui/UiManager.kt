@@ -40,18 +40,16 @@ object UiManager {
         service = MenuService(
             engine = engine, renderer = WidgetRenderer(engine), executor = DataExecutor(engine), scope
         )
-        VesselServerEvents.CONTAINER_MENU_OPENED.subscribe { event ->
-            service.onMenuOpened(event.player, event.containerId)
-        }
         VesselServerEvents.CONTAINER_MENU_CLOSED.subscribe { event ->
             service.closeMenu(event.player, event.containerId)
         }
     }
 
     fun open(menuName: String, player: ServerPlayer, params: Map<String, Any?>) {
-        val menu = MenuRegistry.get(menuName)
+        val normalizedId = MenuRegistry.normalizeId(menuName)
+        val menu = MenuRegistry.get(normalizedId)
         if (menu == null) {
-            VesselMod.LOGGER.error("Failed to open menu. No such menu '$menuName'")
+            VesselMod.LOGGER.error("Failed to open menu. No such menu '$normalizedId'")
             return
         }
         service.openMenu(player, menu, params)

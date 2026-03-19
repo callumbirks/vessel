@@ -1,7 +1,9 @@
 package com.doofcraft.vessel.server.ui.handler
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.registry.StackComponents
 import com.doofcraft.vessel.server.ui.UiManager
+import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
 import net.minecraft.world.entity.player.Inventory
@@ -70,12 +72,13 @@ class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: In
 
     override fun clicked(slotId: Int, button: Int, clickType: ClickType, player: Player) {
         val stack = if (slotId >= 0 && slotId < container.containerSize) container.getItem(slotId) else ItemStack.EMPTY
+        val hasButton = stack[StackComponents.MENU_BUTTON] != null
         val decision = UiSlotClickPolicy.decide(
             slotId = slotId,
             menuSize = container.containerSize,
             clickType = clickType,
             carriedEmpty = carried.isEmpty,
-            hasButton = stack[StackComponents.MENU_BUTTON] != null
+            hasButton = hasButton
         )
 
         when (decision) {
@@ -86,7 +89,36 @@ class GenericInventoryScreenHandler(syncId: Int, private val playerInventory: In
                 broadcastFullState()
             }
             UiSlotClickDecision.REJECT -> {
+                if (slotId in 0 until container.containerSize && hasButton) {
+                    VesselMod.LOGGER.warn(
+                        "Rejected Vessel UI button click for player='{}' slot={} clickType={} button={} carried={} containerId={} handler='{}' slotItem={}",
+                        player.scoreboardName,
+                        slotId,
+                        clickType,
+                        button,
+                        describeStack(carried),
+                        containerId,
+                        this::class.simpleName ?: this::class.java.name,
+                        describeStack(stack)
+                    )
+                }
                 broadcastFullState()
+            }
+        }
+    }
+
+    private fun describeStack(stack: ItemStack): String {
+        if (stack.isEmpty) return "empty"
+        val name = stack.itemHolder.unwrapKey().map { it.location().toString() }.orElseGet { stack.item.toString() }
+        val customName = stack.get(DataComponents.CUSTOM_NAME)?.string
+        return buildString {
+            append(name)
+            append(" x")
+            append(stack.count)
+            customName?.takeIf { it.isNotBlank() }?.let {
+                append(" name='")
+                append(it)
+                append('\'')
             }
         }
     }

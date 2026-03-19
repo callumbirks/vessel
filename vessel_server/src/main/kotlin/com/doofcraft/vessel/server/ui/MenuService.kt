@@ -1,5 +1,6 @@
 package com.doofcraft.vessel.server.ui
 
+import com.doofcraft.vessel.common.VesselMod
 import com.doofcraft.vessel.common.component.MenuButton
 import com.doofcraft.vessel.server.api.async.VesselAsync
 import com.doofcraft.vessel.server.ui.cmd.CommandBus
@@ -26,7 +27,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.item.ItemStack
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import kotlin.collections.toMutableMap
@@ -175,7 +178,28 @@ class MenuService(
 
         val openMenu =
             (player.containerMenu as? GenericInventoryScreenHandler)?.container as? InventoryMenuContainer ?: run {
+                if (nodes != null) {
+                    VesselMod.LOGGER.warn(
+                        "Vessel UI refresh lost active menu for player='{}' menu='{}' expected='{}' actual='{}' containerId={} carried={}",
+                        player.scoreboardName,
+                        menu.ctx.menuId,
+                        GenericInventoryScreenHandler::class.simpleName,
+                        player.containerMenu::class.simpleName ?: player.containerMenu::class.java.name,
+                        player.containerMenu.containerId,
+                        describeStack(player.containerMenu.carried)
+                    )
+                }
                 if (nodes == null) {
+                    if (!player.containerMenu.carried.isEmpty) {
+                        VesselMod.LOGGER.warn(
+                            "Opening Vessel UI with non-empty carried stack for player='{}' menu='{}' actual='{}' containerId={} carried={}",
+                            player.scoreboardName,
+                            menu.ctx.menuId,
+                            player.containerMenu::class.simpleName ?: player.containerMenu::class.java.name,
+                            player.containerMenu.containerId,
+                            describeStack(player.containerMenu.carried)
+                        )
+                    }
                     val initialMenu = InventoryMenuContainer(renderedTitle, menu.plan.def.rows, rendered.items.toMutableMap())
                     val syncId = initialMenu.open(player) ?: return@onMainThread false
                     menu.syncTracker.replaceWith(syncId)
@@ -194,6 +218,22 @@ class MenuService(
             val syncId = newMenu.open(player) ?: return@onMainThread false
             menu.syncTracker.replaceWith(syncId)
             true
+        }
+    }
+
+    private fun describeStack(stack: ItemStack): String {
+        if (stack.isEmpty) return "empty"
+        val name = stack.itemHolder.unwrapKey().map { it.location().toString() }.orElseGet { stack.item.toString() }
+        val customName = stack.get(DataComponents.CUSTOM_NAME)?.string
+        return buildString {
+            append(name)
+            append(" x")
+            append(stack.count)
+            customName?.takeIf { it.isNotBlank() }?.let {
+                append(" name='")
+                append(it)
+                append('\'')
+            }
         }
     }
 }
